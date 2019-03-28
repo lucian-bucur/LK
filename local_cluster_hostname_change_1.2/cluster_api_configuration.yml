@@ -2,8 +2,8 @@
 # 1 - 3. Run api to update hostname confguration
 - name: Run api to update hostname confguration
   vars:
-      server = {{ new_hostname.split('.')[0] }}
-      domain = {{ new_hostname.split(server+'.')[1] }}
+      server : "{{ new_hostname.split('.')[0] }}"
+      domain : "{{ new_hostname.split(server+'.')[1] }}"
   uri:
     url: curl -k https://cluster-api.seinternal.com/api/cluster/{{ domain }}/ -d "{'master:' '\"{{ new_hostname }}\"'}"
 # 5. Run the updater
