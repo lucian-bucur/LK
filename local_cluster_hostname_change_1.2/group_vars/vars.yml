@@ -12,7 +12,7 @@ api_url:       "https://monitor.seinternal.com/api_jsonrpc.php"
 username:      "lucian.bucur"
 password:      "G5jINiSG7ekRwrSp"
 
-hostname:      "server1.test30.simplyspamfree.com"
+old_hostname:  "server1.test30.simplyspamfree.com"
 new_hostname:  "server1.test30.simplyspamfree.com"
 
 json_get_data: {
@@ -21,7 +21,7 @@ json_get_data: {
              "params": {
                      "output": ["hostid","tls_psk_identity", "tls_psk"],
                      "filter": {
-                                  "host": "{{ hostname }}"
+                                  "host": "{{ old_hostname }}"
                      }
              },
              "id": "1",
@@ -33,7 +33,7 @@ json_post_data: {
     "method": "host.update",
     "params": {
                     "hostid": "{{ api_get.api_get_hostid}}",
-                    "host":   "{{ hostname     }}",
+                    "host":   "{{ old_hostname     }}",
                     "name":   "{{ new_hostname }}",
                     "tls_psk_identity": "{{ new_hostname }}_{{ api_get.api_get_tls_psk_identity }}.split('_')[1]",
                     "tls_psk": "{{ api_get.api_get_tls_psk }}"
