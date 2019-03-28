@@ -25,12 +25,12 @@
         - packages
     - name: pip manage dependencies
       pip: name="{{ item }}"
-      with_items: ["requests", "pybase64", "subprocess.run", "mysql-connector-python"]
+      with_items: ["requests", "pybase64"]
     # --------------------------------------------------------------------------
     # CLUSTER API CONFIGURATION
-    # - name: cluster api cluster_api_configuration tasks
-    #   import_tasks: cluster_api_configuration.yml
-    #   ignore_unreachable: true
+    - name: cluster api cluster_api_configuration tasks
+      import_tasks: cluster_api_configuration.yml
+      ignore_unreachable: true
     # -------------------------------------------------------------------------
     # ZABBIX API LOGIN
     - name: module api_login execution
