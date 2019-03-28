@@ -5,7 +5,7 @@
       server : "{{ new_hostname.split('.')[0] }}"
       domain : "{{ new_hostname.split(server+'.')[1] }}"
   uri:
-    url: curl -k "http://cluster-api.seinternal.com/api/cluster/{{ domain }}/" -d "{'master:' '\"{{ new_hostname }}\"'}"
+    url: curl "https://cluster-api.seinternal.com/api/cluster/{{ domain }}/" -d "{'master:' '\"{{ new_hostname }}\"'}"
 # 5. Run the updater
 - name: Run the updater
   command: "/home/spamexperts/update/update -d --skip-wait-turn --skip-version-check --skip-apt --skip-restart --skip-cron --skip-applications --skip-pip --skip-pip-cache --skip-preupdate --skip-postupdate --skip-salt --skip-preupdate-migrations --skip-postupdate-migrations"
