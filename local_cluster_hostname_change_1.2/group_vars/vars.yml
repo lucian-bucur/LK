@@ -1,0 +1,43 @@
+---
+unix_socket:   'var/run/mysqld/mysqld.sock'
+database:      'spampanel'
+api_user:      'apiuser'
+localhost:     'localhost'
+cluster_dns:   'outlook2go.com'
+server_list:   requests.get(’https://cluster-api.seinternal.com/api/cluster/outlook2go.com/hosts').json()[‘hosts’]
+domain:    str(requests.get('https://cluster-api.seinternal.com/api/cluster/outlook2go.com/hosts').json()['api_server']).split('.')[1]
+local_domains: requests.get('https://cluster-api.seinternal.com/api/cluster/outlook2go.com').json()['configuration'].split('\n')[1].split('=')[1]
+
+api_url:       "https://monitor.seinternal.com/api_jsonrpc.php"
+username:      "lucian.bucur"
+password:      "G5jINiSG7ekRwrSp"
+
+hostname:      "mx03.yournamewebhosting.com"
+new_hostname:  "mx03.yournamewebhosting.com"
+
+json_get_data: {
+             "jsonrpc": "2.0",
+             "method":  "host.get",
+             "params": {
+                     "output": ["hostid","tls_psk_identity", "tls_psk"],
+                     "filter": {
+                                  "host": "{{ hostname }}"
+                     }
+             },
+             "id": "1",
+             "auth": "{{ api_login.appkey }}"
+}
+
+json_post_data: {
+    "jsonrpc": "2.0",
+    "method": "host.update",
+    "params": {
+                    "hostid": "{{ api_get.api_get_hostid}}",
+                    "host":   "{{ hostname     }}",
+                    "name":   "{{ new_hostname }}",
+                    "tls_psk_identity": "{{ new_hostname }}_{{ api_get.api_get_tls_psk_identity }}.split('_')[1]",
+                    "tls_psk": "{{ api_get.api_get_tls_psk }}"
+    },
+    "id":   "1",
+    "auth": "{{ api_login.appkey }}"
+}
