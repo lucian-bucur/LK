@@ -4,7 +4,7 @@ import mysql.connector
 import subprocess
 import hashlib
 
-password = base64.urlsafe_b64encode("%s.%s" % ('{{new_hostname}}','{{api_user}}'))
+password = base64.urlsafe_b64encode("%s.%s" % ("{{new_hostname}}","{{api_user}}"))
 
 cnx = mysql.connector.connect(user='root',host='{{localhost}}',unix_socket='{{unix_socket}}',database='{{database}}')
 cursor = cnx.cursor()

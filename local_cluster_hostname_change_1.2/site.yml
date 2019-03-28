@@ -24,7 +24,10 @@
       tags:
         - packages
     - name: pip manage dependencies
-      pip: name=requests
+      pip: name="{{ item }}"
+      with_items:
+           - requests
+           - base64
 
     - name: cluster api cluster_api_configuration tasks
       import_tasks: cluster_api_configuration.yml
