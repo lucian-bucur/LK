@@ -6,5 +6,17 @@
   gather_facts:   true
   vars_files:
     - group_vars/vars.yml
+  vars:
+    hosts: [ "server1.test30.simplyspamfree.com", "server1.test57.simplyspamfree.com" ]
   tasks:
-  
+  - name:  run the shell command to retrieve the data
+    debug: msg="hostvars[ "{{ item }}" ]['ansible_all_ipv4_addresses']
+    register: servers
+    with_items: "{{ hosts }}"
+
+  - debug: msg="{{ servers }}"
+
+  # - name: Check for failure and output a message
+  #   shell: "echo {{ item }}"
+  #   with_items: "{{ servers.results }}"
+  # {{ ansible_all_ipv4_addresses }}[0]
