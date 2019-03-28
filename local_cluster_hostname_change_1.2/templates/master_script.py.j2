@@ -18,7 +18,7 @@ passwordsalt = password+salt
 
 # subprocess.call(echo -n "import hash" | openssl dgst -sha1)
 hashlib_object  = hashlib.sha1(passwordsalt)
-hash = print hashlib_object.hexdigest()
+hash = hashlib_object.hexdigest()
 
 query1 = ("update users set password = '%s' where username='{{api_user}}';" % hash)
 
