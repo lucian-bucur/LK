@@ -16,7 +16,7 @@ cursor.execute(query)
 salt = cursor.fetchone()[0]
 passwordsalt = password+salt
 
-subprocess.call(echo -n "import hash" | openssl dgst -sha1)
+# subprocess.call(echo -n "import hash" | openssl dgst -sha1)
 hashlib_object  = hashlib.sha1(passwordsalt)
 hash = print hashlib_object.hexdigest()
 
