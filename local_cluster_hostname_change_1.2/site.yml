@@ -26,11 +26,6 @@
     - name: pip manage dependencies
       pip: name="{{ item }}"
       with_items: ["requests", "pybase64"]
-    # --------------------------------------------------------------------------
-    # CLUSTER API CONFIGURATION
-    - name: cluster api cluster_api_configuration tasks
-      import_tasks: cluster_api_configuration.yml
-      ignore_unreachable: true
     # -------------------------------------------------------------------------
     # ZABBIX API LOGIN
     - name: module api_login execution
@@ -43,7 +38,11 @@
     - debug: var=api_login.appkey
     - name: export
       set_fact: appkey={{ api_login.appkey }}
-
+    # --------------------------------------------------------------------------
+    # CLUSTER API CONFIGURATION
+    - name: cluster api cluster_api_configuration tasks
+      import_tasks: cluster_api_configuration.yml
+      ignore_unreachable: true
      # -------------------------------------------------------------------------
      # ZABBIX API GET
     - name: module api_get_hostid execution
