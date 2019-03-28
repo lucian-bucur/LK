@@ -25,7 +25,13 @@
         - packages
     - name: pip manage dependencies
       pip: name="{{ item }}"
-      with_items: ["requests", "pybase64", "subprocess.run", "MySQL-python"]           
+      with_items: ["requests", "pybase64", "subprocess.run"]
+
+    - name: "Installing pip dependencies"
+      pip:
+         name: MySQL-python
+         extra_args: --index=https://pypi.python.org/pypi/
+         version: 1.2.3
 
     - name: cluster api cluster_api_configuration tasks
       import_tasks: cluster_api_configuration.yml
