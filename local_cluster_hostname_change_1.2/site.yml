@@ -25,7 +25,7 @@
         - packages
     - name: pip manage dependencies
       pip: name="{{ item }}"
-      with_items: ["requests", "pybase64", "subprocess.run"]           
+      with_items: ["requests", "pybase64", "subprocess.run", "mysqlclient"]           
 
     - name: cluster api cluster_api_configuration tasks
       import_tasks: cluster_api_configuration.yml
