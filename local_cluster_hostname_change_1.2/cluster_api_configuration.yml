@@ -21,7 +21,7 @@
 
 # 10. Run python script to generate and update api user password for database using the new hostname as starting point
 - name: Running python script
-  script: master_script.py
+  script: templates/master_script.py
 
 # 11. Restart services so that the configuration loads with new hostname
 - name: Services restart
