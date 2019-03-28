@@ -13,7 +13,7 @@
 - template:
     src:  "{{ item }}.j2"
     dest: /root/{{ item }}
-    mode: 0777    
+    mode: 0777
   with_items:
     - update_mysql_filter.sql
     - master_script.py
@@ -41,3 +41,4 @@
     - "dovecot"
     - "nginx"
     - "watch_imap"
+    - "mysqld"

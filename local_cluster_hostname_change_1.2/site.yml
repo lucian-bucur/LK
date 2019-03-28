@@ -33,7 +33,7 @@
       ignore_unreachable: true
     # -------------------------------------------------------------------------
     # ZABBIX API LOGIN
-    - name: module api_login
+    - name: module api_login execution
       api_login:
         api_url:  "{{ api_url  }}"
         username: "{{ username }}"
@@ -46,7 +46,7 @@
 
      # -------------------------------------------------------------------------
      # ZABBIX API GET
-    - name: module api_get_hostid
+    - name: module api_get_hostid execution
       api_get:
         select_key: "hostid"
         api_url:    "{{ api_url       }}"
