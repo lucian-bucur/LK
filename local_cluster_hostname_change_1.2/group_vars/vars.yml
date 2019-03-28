@@ -12,8 +12,8 @@ api_url:       "https://monitor.seinternal.com/api_jsonrpc.php"
 username:      "lucian.bucur"
 password:      "G5jINiSG7ekRwrSp"
 
-hostname:      "mx03.yournamewebhosting.com"
-new_hostname:  "mx03.yournamewebhosting.com"
+hostname:      "server1.test30.simplyspamfree.com"
+new_hostname:  "server1.test30.simplyspamfree.com"
 
 json_get_data: {
              "jsonrpc": "2.0",
