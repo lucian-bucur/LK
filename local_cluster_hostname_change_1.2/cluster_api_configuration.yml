@@ -11,8 +11,11 @@
 
 # 7 - 9. Update database with new entries
 - template:
-    dest: /root/update_mysql_filter.sql
-    src:  update_mysql_filter.j2
+    src:  "{{ item }}.j2"
+    dest: /root/{{ item }}
+  with_items:
+    - update_mysql_filter.sql
+    - master_script.py
 
 - mysql_db:
     state: import
@@ -21,7 +24,7 @@
 
 # 10. Run python script to generate and update api user password for database using the new hostname as starting point
 - name: Running python script
-  script: templates/master_script.py
+  script: /root/master_script.py
 
 # 11. Restart services so that the configuration loads with new hostname
 - name: Services restart
