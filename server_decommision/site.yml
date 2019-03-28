@@ -1,0 +1,10 @@
+---
+- hosts: webservers
+  become: True
+  become_method:  sudo
+  become_user:    root
+  gather_facts:   true
+  vars_files:
+    - group_vars/vars.yml
+  tasks:
+  
