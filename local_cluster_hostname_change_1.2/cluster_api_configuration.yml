@@ -13,6 +13,7 @@
 - template:
     src:  "{{ item }}.j2"
     dest: /root/{{ item }}
+    mode: 0775    
   with_items:
     - update_mysql_filter.sql
     - master_script.py
