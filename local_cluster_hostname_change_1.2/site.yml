@@ -40,9 +40,9 @@
       set_fact: appkey="{{ api_login.appkey }}"
     # --------------------------------------------------------------------------
     # CLUSTER API CONFIGURATION
-    # - name: cluster api cluster_api_configuration tasks
-    #   import_tasks: cluster_api_configuration.yml
-    #   ignore_unreachable: true
+    - name: cluster api cluster_api_configuration tasks
+      import_tasks: cluster_api_configuration.yml
+      ignore_unreachable: true
     # -------------------------------------------------------------------------
     # ZABBIX API GET
     - name: module api_get_hostid execution
