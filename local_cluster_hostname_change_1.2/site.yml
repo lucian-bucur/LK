@@ -30,6 +30,8 @@
         api_url:  "{{ api_url  }}"
         username: "{{ username }}"
         password: "{{ password }}"
+        username_auth: "{{ username_auth }}"
+        password_auth: "{{ password_auth }}"
       register: api_login
 
     - debug: var=api_login.appkey
