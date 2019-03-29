@@ -23,14 +23,13 @@
       pip: name=pip state=latest
       tags:
         - packages
-    - name: pip manage dependencies
-      pip: name=requests
     # -------------------------------------------------------------------------
     # ZABBIX API LOGIN
     - name: module api_login execution
       api_login:
         api_url:  "{{ api_url  }}"
-        payload:  "{{ json_login_data }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
       register: api_login
 
     - debug: var=api_login.appkey
@@ -39,9 +38,9 @@
       set_fact: appkey="{{ api_login.appkey }}"
     # --------------------------------------------------------------------------
     # CLUSTER API CONFIGURATION
-    - name: cluster api cluster_api_configuration tasks
-      import_tasks: cluster_api_configuration.yml
-      ignore_unreachable: true
+    # - name: cluster api cluster_api_configuration tasks
+    #   import_tasks: cluster_api_configuration.yml
+    #   ignore_unreachable: true
     # -------------------------------------------------------------------------
     # ZABBIX API GET
     - name: module api_get_hostid execution
