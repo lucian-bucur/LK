@@ -50,6 +50,8 @@
         select_key: "hostid"
         api_url:    "{{ api_url       }}"
         payload:    "{{ json_get_data }}"
+        username_auth: "{{ username_auth }}"
+        password_auth: "{{ password_auth }}"
       register: api_get
 
     - name: export
@@ -61,6 +63,8 @@
         select_key: "tls_psk"
         api_url:    "{{ api_url       }}"
         payload:    "{{ json_get_data }}"
+        username_auth: "{{ username_auth }}"
+        password_auth: "{{ password_auth }}"
       register: api_get
 
     - name: export
@@ -72,6 +76,8 @@
         select_key: "tls_psk_identity"
         api_url:    "{{ api_url       }}"
         payload:    "{{ json_get_data }}"
+        username_auth: "{{ username_auth }}"
+        password_auth: "{{ password_auth }}"
       register: api_get
 
     - name: export
@@ -83,6 +89,8 @@
       api_post:
         api_url:    "{{ api_url       }}"
         payload:    "{{ json_get_data }}"
+        username_auth: "{{ username_auth }}"
+        password_auth: "{{ password_auth }}"
       register: api_post
 
     # -------------------------------------------------------------------------
