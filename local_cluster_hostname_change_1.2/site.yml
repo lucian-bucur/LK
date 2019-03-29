@@ -30,9 +30,10 @@
     - name: module api_login execution
       api_login:
         api_url:  "{{ api_url  }}"
-        username: "{{ username }}"
-        password: "{{ password }}"
+        payload:  "{{ json_login_data }}"
       register: api_login
+
+    - debug: var=api_login.appkey
 
     - name: export
       set_fact: appkey="{{ api_login.appkey }}"
