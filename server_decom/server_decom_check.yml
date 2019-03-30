@@ -1,0 +1,71 @@
+---
+- hosts: webservers
+  become: True
+  vars_files:
+       group_vars/vars.yml
+  tasks:
+  # Step 1. Ensure the server does not have a special role
+  # Step 1.a  Check that the server does not have roles for quarantine,logging, archiving, backup
+  # - name: Check if the server has roles for quarantine
+  #   lineinfile:
+  #     dest: /etc/spamexperts/cluster.conf
+  #     line: "is_quarantine = True"
+  #   check_mode: yes
+  #   register: presence
+  #   failed_when: presence.failed
+  #
+  # - fail: msg='The Server is used as a quarantine server. Exiting gracefully .... '
+  #   when: presence.changed == false
+
+  # - name: Check if the server has roles for logging
+  #   lineinfile:
+  #     dest: /etc/spamexperts/cluster.conf
+  #     line: "is_logging = True"
+  #   check_mode: yes
+  #   register: presence
+  #   failed_when: presence.failed
+  #
+  # - fail: msg='The Server is used as a logging server. Exiting gracefully .... '
+  #   when: presence.changed == false
+
+  # - name: Check if the server has roles for archiving
+  #   lineinfile:
+  #     dest: /etc/spamexperts/cluster.conf
+  #     line: "is_archive_master = True"
+  #   check_mode: yes
+  #   register: presence
+  #   failed_when: presence.failed
+  #
+  # - fail: msg='The Server is used as a archive server. Exiting gracefully .... '
+  #   when: presence.changed == false
+
+  # - name: Check if the server has roles for backup
+  #   lineinfile:
+  #     dest: /etc/spamexperts/backup
+  #     line: "BACKUP_HOST={{ansible_fqdn}}"
+  #   check_mode: yes
+  #   register: presence
+  #   failed_when: presence.failed
+  #
+  # - fail: msg='The Server is used as a archive server. Exiting gracefully .... '
+  #   when: presence.changed == false
+
+  # Step 1.b Check for the SOCKS support for this server on ansible_all_ipv4_addresses.
+  - name: "Check socks support on this server"
+    include: snippets/check_socks.yml pkgName="{{ item }}"
+    with_nested:
+      - "{{ ansible_all_ipv4_addresses }}"
+
+  # Step 2. Check that the ipv4 of the server is not listed in the domains array.
+  - name: "Check socks support on this server"
+    include: snippets/server_check_ipv4.yml pkgName="{{ item }}"
+    with_nested:
+      - "{{ domains }}"
+      - "{{ ansible_all_ipv4_addresses }}"
+
+  # Step 3. Check that the ipv6 of the server is not listed in the domains array.
+  - name: "Check socks support on this server"
+    include: snippets/server_check_ipv6.yml pkgName="{{ item }}"
+    with_nested:
+      - "{{ domains }}"
+      - "{{ ansible_all_ipv6_addresses }}"

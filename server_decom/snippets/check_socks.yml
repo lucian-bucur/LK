@@ -1,0 +1,23 @@
+- name: Check the SOCKS incoming and outgoing support for this server ipv4
+  uri: url='https://localhost:30443/master/outgoing_ipv4_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[0] }}"}],"count":"true"}'
+       validate_certs=false
+  register: x
+  # failed_when: x.content["count"] == 0
+
+- debug: var=x.stdout
+
+
+# - name: Check the SOCKS incoming and outgoing support for this server ipv6
+#   uri: url='https://localhost:30443/master/outgoing_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":true}'
+#        validate_certs=false
+#   #failed_when: ' "count": "0" '
+#
+# - name: Check the SOCKS incoming and outgoing support for this server ipv4
+#   uri: url='https://localhost:30443/master/incoming_ipv4_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[0] }}"}],"count":true}'
+#        validate_certs=false
+#   #failed_when: ' "count": "0" '
+#
+# - name: Check the SOCKS incoming and outgoing support for this server ipv6
+#   uri: url='https://localhost:30443/master/incoming_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":true}'
+#        validate_certs=false
+#   #failed_when: ' "count": "0" '
