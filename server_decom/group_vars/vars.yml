@@ -1,1 +1,7 @@
-domains: [ delivery.antispamcloud.com, submission.antispamcloud.com, mx-us.antispamcloud.com, fallbackmx-us.antispamcloud.com, lastmx-us.antispamcloud.com, mx-eu.antispamcloud.com, fallbackmx-eu.antispamcloud.com, lastmx-eu.antispamcloud.com ]
+webservers_ip_list:        "{{ groups['webservers'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list }}"
+webservers_hostnames_list: "{{ groups['webservers'] | map('extract', hostvars, ['inventory_hostname'])             | list }}"
+domains: [ delivery.antispamcloud.com, submission.antispamcloud.com,
+           mx-us.antispamcloud.com,
+           mx-eu.antispamcloud.com,
+           fallbackmx-us.antispamcloud.com, lastmx-us.antispamcloud.com,
+           fallbackmx-eu.antispamcloud.com, lastmx-eu.antispamcloud.com ]
