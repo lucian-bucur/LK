@@ -2,6 +2,6 @@ webservers_ip_list:        "{{ groups['webservers'] | map('extract', hostvars, [
 webservers_hostnames_list: "{{ groups['webservers'] | map('extract', hostvars, ['inventory_hostname'])             | list }}"
 domains: [ delivery.antispamcloud.com, submission.antispamcloud.com,
            mx-us.antispamcloud.com,
-           mx-eu.antispamcloud.com,
+           mx-eu.antispamcloud.comg,
            fallbackmx-us.antispamcloud.com, lastmx-us.antispamcloud.com,
            fallbackmx-eu.antispamcloud.com, lastmx-eu.antispamcloud.com ]
