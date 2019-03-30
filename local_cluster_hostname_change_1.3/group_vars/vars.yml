@@ -10,9 +10,9 @@ local_domains: requests.get('https://cluster-api.seinternal.com/api/cluster/outl
 
 api_url:       "https://monitor.seinternal.com/api_jsonrpc.php"
 username:      "lucian.bucur"
-password:      "G5jINiSG7ekRwrSp"
-username_auth: "spam"
-password_auth: "experts"
+password:      ""
+username_auth: ""
+password_auth: ""
 
 old_hostname:  "server1.test57.simplyspamfree.com"
 new_hostname:  "server1.test57.simplyspamfree.com"
