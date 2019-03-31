@@ -1,0 +1,29 @@
+---
+- hosts: webservers
+  become: True
+  become_method:  sudo
+  become_user:    root
+  gather_facts:   true
+  vars_files:
+       group_vars/vars.yml
+  tasks:
+  # --------------------------------------------------------------------------
+  # BASICS PACKAGES
+  - name: modules python installation
+    raw: "sudo apt-get -y install {{ item }}"
+    with_items: ["python", "python-pip"]
+
+  - name: upgrade pip
+    pip: name=pip state=latest
+  # --------------------------------------------------------------------------
+  # USERNAMES & GROUPS
+  - name: users configuration
+    import_tasks: tasks/users_configuration.yml
+    ignore_unreachable: true
+  # --------------------------------------------------------------------------
+  # BASIC TESTS
+  - name: check
+    debug: msg="{{ item }}"
+    loop:
+     - "{{ webservers_ip_list        }}"
+     - "{{ webservers_hostnames_list }}"

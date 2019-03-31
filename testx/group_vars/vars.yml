@@ -1,0 +1,13 @@
+webservers_ip_list:        "{{ groups['webservers'] | map('extract', hostvars, ['ansible_default_ipv4','address']) | list }}"
+webservers_hostnames_list: "{{ groups['webservers'] | map('extract', hostvars, ['inventory_hostname'])             | list }}"
+
+group_list:
+  - name: lucianx
+
+user_lists:
+  - name: lucianx
+    permission_group: lucianx
+    shell: "/bin/bash"
+    sudo: lucianx
+    users:
+      - lucianx
