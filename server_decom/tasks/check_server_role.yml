@@ -1,0 +1,11 @@
+---
+- name: "check if the server role is {{ item }}"
+  lineinfile:
+    dest: /etc/spamexperts/cluster.conf
+    line: "is_{{ item }} = True"
+  check_mode: yes
+  register: presence
+  failed_when: presence.failed
+
+- fail: msg='The Server is used as a {{ item }} server. Exiting gracefully ... '
+  when: not presence.changed
