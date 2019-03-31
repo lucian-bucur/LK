@@ -16,18 +16,18 @@
   # Step 1.b Check for the SOCKS support for this server on ansible_all_ipv4_addresses.
   - name: "Check socks support on this server"
     include: tasks/check_socks.yml
-    with_nested:
+    with_items:
       - "{{ ansible_all_ipv4_addresses }}"
 
   # Step 2. Check that the ipv4 of the server is not listed in the domains array.
-  - name: "Check socks support on this server"
+  - name: "Check that server ipv4 address is not listed in the domains array"
     include: tasks/server_check_ipv4.yml
     with_nested:
       - "{{ domains }}"
       - "{{ ansible_all_ipv4_addresses }}"
 
   # Step 3. Check that the ipv6 of the server is not listed in the domains array.
-  - name: "Check socks support on this server"
+  - name: "Check that server ipv6 address is not listed in the domains array"
     include: tasks/server_check_ipv6.yml
     with_nested:
       - "{{ domains }}"
