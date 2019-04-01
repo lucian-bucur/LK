@@ -7,5 +7,15 @@
   register: presence
   failed_when: presence.failed
 
-- fail: msg='The Server is used as a {{ item }} server. Exiting gracefully ... '
+- name: export
+  set_fact:
+      append_dict: "{ 'server_check_role is_{{ item }}' : 'True' }"
   when: not presence.changed
+- name: export
+  set_fact:
+      append_dict: "{ 'server_check_role is_{{ item }}' : 'False' }"
+  when:     presence.changed
+
+- name: export
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"

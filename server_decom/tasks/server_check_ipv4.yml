@@ -1,9 +1,20 @@
+- name: Run the shell command to retrieve the data for ipv4 address
+  shell: "host {{ item[0] }} | grep {{ item[1] }}"
+  register: servers
+  failed_when: servers.rc == 199
 
-  - name: Run the shell command to retrieve the data
-    shell: "host {{ item[0] }} | grep {{ item[1] }}"
-    register: servers
-    failed_when: servers.rc == 199
-
-  - name: Check for failure and output a message
-    fail: msg="The domain {{ item }} contains the ip of the current server. Exiting gracefully .... "
-    when: servers.rc == 0
+- name: export
+  set_fact:
+      append_dict: "{
+                     'server_check_ipv4 address {{ item[1] }} listed in hostname[{{ item[0] }}]'    : 'False'
+      }"
+  when: servers.rc != 0
+- name: export
+  set_fact:
+      append_dict: "{
+                     'server_check_ipv4 address {{ item[1] }} listed in hostname[{{ item[0] }}]'    : 'True'
+      }"
+  when: servers.rc == 0
+- name: export
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"

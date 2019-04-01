@@ -1,40 +1,61 @@
 
 # OUTGOING SUPPORT
 # ------------------------------------------------------------------------------
-- name: Check the SOCKS outgoing support for this server ipv4
-  uri: url='https://localhost:30443/master/outgoing_ipv4_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item }}"}],"count":"true"}'
+- name: Check the SOCKS (delivery or submission) outgoing support for this server ipv4
+  uri: url='https://localhost:30443/master/outgoing_ipv4_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[0] }}"}],"count":"true"}'
        validate_certs=false
   register: response
 
-- name: Check for failure and output a message for SOCKS outgoing support for this server ipv4
-  fail: msg="count != 0. Exiting gracefully ...."
-  when: response.json.objects[0]['count'] != 0
+- name: export
+  set_fact:
+      append_dict: "{
+                      'server_check_socks outgoing_ipv4_address':'{{ item[0] }} used {{ response.json.objects[0]['count'] }} times for socks'
+      }"
+- name: export
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"
 
-- name: Check the SOCKS outgoing support for this server ipv6
-  uri: url='https://localhost:30443/master/outgoing_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item }}"}],"count":"true"}'
+
+- name: Check the SOCKS (delivery or submission) outgoing support for this server ipv6
+  uri: url='https://localhost:30443/master/outgoing_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":"true"}'
        validate_certs=false
   register: response
 
-- name: Check for failure and output a message for SOCKS outgoing support for this server ipv6
-  fail: msg="count != 0. Exiting gracefully ...."
-  when: response.json.objects[0]['count'] != 0
+- name: export
+  set_fact:
+      append_dict: "{
+                      'server_check_socks outgoing_ipv6_address':'{{ item[1] }} used {{ response.json.objects[0]['count'] }} times for socks'
+      }"
+- name: export
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"
 
   # INCOMING SUPPORT
   # ------------------------------------------------------------------------------
-- name: Check the SOCKS incoming support for this server ipv4
-  uri: url='https://localhost:30443/master/incoming_ipv4_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item }}"}],"count":"true"}'
+- name: Check the SOCKS (delivery or submission) incoming support for this server ipv4
+  uri: url='https://localhost:30443/master/incoming_ipv4_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[0] }}"}],"count":"true"}'
        validate_certs=false
   register: response
 
-- name: Check for failure and output a message for SOCKS incoming support for this server ipv4
-  fail: msg="count != 0. Exiting gracefully ...."
-  when: response.json.objects[0]['count'] != 0
+- name: export
+  set_fact:
+      append_dict: "{
+                     'server_check_socks incoming_ipv4_address':'{{ item[0] }} used {{ response.json.objects[0]['count'] }} times for socks'
+      }"
+- name: export
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"
 
-- name: Check the SOCKS incoming support for this server ipv6
-  uri: url='https://localhost:30443/master/incoming_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item }}"}],"count":"true"}'
+- name: Check the SOCKS (delivery or submission) incoming support for this server ipv6
+  uri: url='https://localhost:30443/master/incoming_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":"true"}'
        validate_certs=false
   register: response
 
-- name: Check for failure and output a message for SOCKS incoming support for this server ipv6
-  fail: msg="count != 0. Exiting gracefully ...."
-  when: response.json.objects[0]['count'] != 0
+- name: export
+  set_fact:
+      append_dict: "{
+                     'server_check_socks incoming_ipv6_address': '{{ item[1] }} used {{ response.json.objects[0]['count'] }} times for socks'
+      }"
+- name: export
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"

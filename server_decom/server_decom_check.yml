@@ -3,7 +3,15 @@
   become: True
   vars_files:
        group_vars/vars.yml
+  vars:
+        dict: {}
   tasks:
+  - name: export
+    set_fact:
+        append_dict: "{'server_check_hostname': '{{inventory_hostname}}'}"
+  - name: export
+    set_fact:
+        dict: "{{ dict | combine(append_dict) }}"
   # Step 1. Ensure the server does not have a special role
   # Step 1.a  Check that the server does not have roles for quarantine,logging, archiving, backup
   - name: "Check the server roles"
@@ -16,8 +24,9 @@
   # Step 1.b Check for the SOCKS support for this server on ansible_all_ipv4_addresses.
   - name: "Check socks support on this server"
     include: tasks/check_socks.yml
-    with_items:
+    with_nested:
       - "{{ ansible_all_ipv4_addresses }}"
+      - "{{ ansible_all_ipv6_addresses }}"
 
   # Step 2. Check that the ipv4 of the server is not listed in the domains array.
   - name: "Check that server ipv4 address is not listed in the domains array"
@@ -32,3 +41,5 @@
     with_nested:
       - "{{ domains }}"
       - "{{ ansible_all_ipv6_addresses }}"
+
+  - debug: msg="{{ dict }}"

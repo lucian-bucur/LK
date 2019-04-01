@@ -1,8 +1,20 @@
-- name: Run the shell command to retrieve the data
+- name: Run the shell command to retrieve the data for ipv6 address
   shell: "host {{ item[0] }} | grep {{ item[1] }}"
   register: servers
   failed_when: servers.rc == 199
 
-- name: Check for failure and output a message
-  fail: msg="The domain {{ item }} contains the ip of the current server. Exiting gracefully .... "
+- name: export
+  set_fact:
+      append_dict: "{
+                     'server_check_ipv6 address {{ item[1] }} listed in hostname[{{ item[0] }}]'    : 'False'
+      }"
+  when: servers.rc != 0
+- name: export
+  set_fact:
+      append_dict: "{
+                     'server_check_ipv6 address {{ item[1] }} listed in hostname[{{ item[0] }}]'    : 'True'
+      }"
   when: servers.rc == 0
+- name: export
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"
