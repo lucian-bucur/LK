@@ -4,7 +4,7 @@
   vars_files:
        group_vars/vars.yml
   vars:
-        dict:           {}
+        dict:                {}
         dict_support_report: {}
   tasks:
   - name: export
@@ -12,7 +12,7 @@
         append_dict: "{'server_check hostname': '{{inventory_hostname}}'}"
   - name: export
     set_fact:
-        dict: "{{ dict | combine(append_dict) }}"
+        dict:                "{{ dict | combine(append_dict) }}"
         dict_support_report: "{{ dict_support_report | combine(append_dict) }}"
 
   - name: "Check the server roles"

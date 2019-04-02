@@ -6,13 +6,13 @@
 - name: export 1
   set_fact:
       append_dict: "{
-                     'server_hostname[{{ item[0] }}] list ipv6_address[{{ item[1] }}]'    : 'False'
+                     'server_hostname[{{ item[0] }}]_list_ipv6_address[{{ item[1].rjust(25) }}]'    : 'False'
       }"
   when: servers.rc != 0
 - name: export 2
   set_fact:
       append_dict: "{
-                     'server_hostname[{{ item[0] }}] list ipv6_address[{{ item[1] }}]'    : 'True'
+                     'server_hostname[{{ item[0] }}]_list_ipv6_address[{{ item[1].rjust(25) }}]'    : 'True'
       }"
   when: servers.rc == 0
 

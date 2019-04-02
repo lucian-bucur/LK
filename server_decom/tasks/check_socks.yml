@@ -9,7 +9,7 @@
 - name: export 1
   set_fact:
       append_dict: "{
-                      'server_check_count(socks_outgoing_ipv4_address {{ item[0] }})': '{{ response.json.objects[0]['count'] }}'
+                      'server_check_count(socks_outgoing_ipv4_address {{ item[0].rjust(25) }})': '{{ response.json.objects[0]['count'] }}'
       }"
 - name: export 2
   set_fact:
@@ -28,7 +28,7 @@
 - name: export 1
   set_fact:
       append_dict: "{
-                      'server_check_count(socks_outgoing_ipv6_address {{ item[0] }})': '{{ response.json.objects[0]['count'] }}'
+                      'server_check_count(socks_outgoing_ipv6_address {{ item[1].rjust(25) }})': '{{ response.json.objects[0]['count'] }}'
       }"
 - name: export 2
   set_fact:
@@ -48,7 +48,7 @@
 - name: export 1
   set_fact:
       append_dict: "{
-                      'server_check_count(socks_incoming_ipv4_address {{ item[0] }})': '{{ response.json.objects[0]['count'] }}'
+                      'server_check_count(socks_incoming_ipv4_address {{ item[0].rjust(25) }})': '{{ response.json.objects[0]['count'] }}'
       }"
 - name: export 2
   set_fact:
@@ -66,7 +66,7 @@
 - name: export 1
   set_fact:
       append_dict: "{
-                      'server_check_count(socks_incoming_ipv4_address {{ item[0] }})': '{{ response.json.objects[0]['count'] }}'
+                      'server_check_count(socks_incoming_ipv6_address {{ item[1].rjust(25) }})': '{{ response.json.objects[0]['count'] }}'
       }"
 - name: export 2
   set_fact:
