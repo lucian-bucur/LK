@@ -4,16 +4,17 @@
   vars_files:
        group_vars/vars.yml
   vars:
-        dict: {}
+        dict:           {}
+        dict_support_report: {}
   tasks:
   - name: export
     set_fact:
-        append_dict: "{'server_check_hostname': '{{inventory_hostname}}'}"
+        append_dict: "{'server_check hostname': '{{inventory_hostname}}'}"
   - name: export
     set_fact:
         dict: "{{ dict | combine(append_dict) }}"
-  # Step 1. Ensure the server does not have a special role
-  # Step 1.a  Check that the server does not have roles for quarantine,logging, archiving, backup
+        dict_support_report: "{{ dict_support_report | combine(append_dict) }}"
+
   - name: "Check the server roles"
     include: tasks/check_server_role.yml
     with_items:
@@ -43,3 +44,4 @@
       - "{{ ansible_all_ipv6_addresses }}"
 
   - debug: msg="{{ dict }}"
+  - debug: msg="{{ dict_support_report }}"

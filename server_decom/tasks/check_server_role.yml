@@ -9,13 +9,20 @@
 
 - name: export
   set_fact:
-      append_dict: "{ 'server_check_role is_{{ item }}' : 'True' }"
+      append_dict: "{ 'server_hostname[{{ inventory_hostname }}]_role={{ item }}' : 'True' }"
   when: not presence.changed
 - name: export
   set_fact:
-      append_dict: "{ 'server_check_role is_{{ item }}' : 'False' }"
+      append_dict: "{ 'server_hostname[{{ inventory_hostname }}]_role={{ item }}' : 'False' }"
   when:     presence.changed
 
+# REPORTS
+# ------------------------------------------------------------------------------
 - name: export
   set_fact:
       dict: "{{ dict | combine(append_dict) }}"
+  when: presence.changed
+- name: export
+  set_fact:
+      dict_support_report: "{{ dict_support_report | combine(append_dict) }}"
+  when: not presence.changed

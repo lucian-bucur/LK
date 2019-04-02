@@ -6,14 +6,18 @@
        validate_certs=false
   register: response
 
-- name: export
+- name: export 1
   set_fact:
       append_dict: "{
-                      'server_check_socks outgoing_ipv4_address':'{{ item[0] }} used {{ response.json.objects[0]['count'] }} times for socks'
+                      'server_check_count(socks_outgoing_ipv4_address {{ item[0] }})': '{{ response.json.objects[0]['count'] }}'
       }"
-- name: export
+- name: export 2
   set_fact:
       dict: "{{ dict | combine(append_dict) }}"
+- name: export 3
+  set_fact:
+      dict_support_report: "{{ dict_support_report | combine(append_dict) }}"
+  when: response.json.objects[0]['count'] != 0
 
 
 - name: Check the SOCKS (delivery or submission) outgoing support for this server ipv6
@@ -21,14 +25,18 @@
        validate_certs=false
   register: response
 
-- name: export
+- name: export 1
   set_fact:
       append_dict: "{
-                      'server_check_socks outgoing_ipv6_address':'{{ item[1] }} used {{ response.json.objects[0]['count'] }} times for socks'
+                      'server_check_count(socks_outgoing_ipv6_address {{ item[0] }})': '{{ response.json.objects[0]['count'] }}'
       }"
-- name: export
+- name: export 2
   set_fact:
       dict: "{{ dict | combine(append_dict) }}"
+- name: export 3
+  set_fact:
+      dict_support_report: "{{ dict_support_report | combine(append_dict) }}"
+  when: response.json.objects[0]['count'] != 0
 
   # INCOMING SUPPORT
   # ------------------------------------------------------------------------------
@@ -37,25 +45,33 @@
        validate_certs=false
   register: response
 
-- name: export
+- name: export 1
   set_fact:
       append_dict: "{
-                     'server_check_socks incoming_ipv4_address':'{{ item[0] }} used {{ response.json.objects[0]['count'] }} times for socks'
+                      'server_check_count(socks_incoming_ipv4_address {{ item[0] }})': '{{ response.json.objects[0]['count'] }}'
       }"
-- name: export
+- name: export 2
   set_fact:
       dict: "{{ dict | combine(append_dict) }}"
+- name: export 3
+  set_fact:
+      dict_support_report: "{{ dict_support_report | combine(append_dict) }}"
+  when: response.json.objects[0]['count'] != 0
 
 - name: Check the SOCKS (delivery or submission) incoming support for this server ipv6
   uri: url='https://localhost:30443/master/incoming_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":"true"}'
        validate_certs=false
   register: response
 
-- name: export
+- name: export 1
   set_fact:
       append_dict: "{
-                     'server_check_socks incoming_ipv6_address': '{{ item[1] }} used {{ response.json.objects[0]['count'] }} times for socks'
+                      'server_check_count(socks_incoming_ipv4_address {{ item[0] }})': '{{ response.json.objects[0]['count'] }}'
       }"
-- name: export
+- name: export 2
   set_fact:
       dict: "{{ dict | combine(append_dict) }}"
+- name: export 3
+  set_fact:
+      dict_support_report: "{{ dict_support_report | combine(append_dict) }}"
+  when: response.json.objects[0]['count'] != 0

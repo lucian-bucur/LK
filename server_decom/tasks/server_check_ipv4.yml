@@ -3,18 +3,25 @@
   register: servers
   failed_when: servers.rc == 199
 
-- name: export
+- name: export 1
   set_fact:
       append_dict: "{
-                     'server_check_ipv4 address {{ item[1] }} listed in hostname[{{ item[0] }}]'    : 'False'
+                     'server_hostname[{{ item[0] }}] list ipv4_address[{{ item[1] }}]'    : 'False'
       }"
   when: servers.rc != 0
-- name: export
+- name: export 2
   set_fact:
       append_dict: "{
-                     'server_check_ipv4 address {{ item[1] }} listed in hostname[{{ item[0] }}]'    : 'True'
+                     'server_hostname[{{ item[0] }}] list ipv4_address[{{ item[1] }}]'    : 'True'
       }"
   when: servers.rc == 0
-- name: export
+
+  # REPORTS
+  # ------------------------------------------------------------------------------
+- name: export 3
   set_fact:
       dict: "{{ dict | combine(append_dict) }}"
+- name: export 4
+  set_fact:
+      dict_support_report: "{{ dict_support_report | combine(append_dict) }}"
+  when: servers.rc == 0
