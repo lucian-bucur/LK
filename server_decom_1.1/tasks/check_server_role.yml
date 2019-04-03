@@ -1,0 +1,27 @@
+---
+- name: "check if the server role is {{ item }}"
+  lineinfile:
+    dest: /etc/spamexperts/cluster.conf
+    line: "is_{{ item }} = True"
+  check_mode: yes
+  register: presence
+  failed_when: presence.failed
+
+- name: export
+  set_fact:
+      append_dict: "{ 'server_hostname[{{ inventory_hostname }}] role={{ item }}' : 'True' }"
+  when: not presence.changed
+- name: export
+  set_fact:
+      append_dict: "{ 'server_hostname[{{ inventory_hostname }}] role={{ item }}' : 'False' }"
+  when:     presence.changed
+
+# REPORTS
+# ------------------------------------------------------------------------------
+- name: export
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"
+- name: export
+  set_fact:
+      dict_support_report: "{{ dict_support_report | combine(append_dict) }}"
+  when: not presence.changed

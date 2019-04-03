@@ -1,0 +1,17 @@
+- name: Run the shell command to retrieve the data for ipv4 address
+  shell: "host {{ item[0] }} | grep {{ item[1] }}"
+  register: servers
+  failed_when: servers.rc == 199
+
+- name: export 1
+  set_fact:
+      append_dict: "{
+                     'hostname[{{ item[0] }}]': 'network_ipv4_interface[{{ item[1].rjust(25) }}]_present'
+      }"
+  when: servers.rc == 0
+
+  # REPORTS
+  # ------------------------------------------------------------------------------
+- name: export 2
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"

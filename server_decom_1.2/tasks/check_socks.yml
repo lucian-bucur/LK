@@ -1,0 +1,64 @@
+
+# OUTGOING SUPPORT
+# ------------------------------------------------------------------------------
+- name: Check the SOCKS (delivery or submission) outgoing support for this server ipv4
+  uri: url='https://localhost:30443/master/outgoing_ipv4_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[0] }}"}],"count":"true"}'
+       validate_certs=false
+  register: response
+
+- name: export 1
+  set_fact:
+      append_dict: "{
+                      'count_socks_outgoing_ipv4_address[{{ item[0].rjust(25) }}]': '{{ response.json.objects[0]['count'] }}'
+      }"
+  when: response.json.objects[0]['count'] != 0
+- name: export 2
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"
+
+- name: Check the SOCKS (delivery or submission) outgoing support for this server ipv6
+  uri: url='https://localhost:30443/master/outgoing_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":"true"}'
+       validate_certs=false
+  register: response
+
+- name: export 1
+  set_fact:
+      append_dict: "{
+                      'count(socks_outgoing_ipv6_address[{{ item[1].rjust(25) }}]': '{{ response.json.objects[0]['count'] }}'
+      }"
+  when: response.json.objects[0]['count'] != 0
+- name: export 2
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"
+
+  # INCOMING SUPPORT
+  # ------------------------------------------------------------------------------
+- name: Check the SOCKS (delivery or submission) incoming support for this server ipv4
+  uri: url='https://localhost:30443/master/incoming_ipv4_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[0] }}"}],"count":"true"}'
+       validate_certs=false
+  register: response
+
+- name: export 1
+  set_fact:
+      append_dict: "{
+                      'count_socks_incoming_ipv4_address[{{ item[0].rjust(25) }}]': '{{ response.json.objects[0]['count'] }}'
+      }"
+  when: response.json.objects[0]['count'] != 0
+- name: export 2
+  set_fact:
+    dict: "{{ dict | combine(append_dict) }}"
+
+- name: Check the SOCKS (delivery or submission) incoming support for this server ipv6
+  uri: url='https://localhost:30443/master/incoming_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":"true"}'
+       validate_certs=false
+  register: response
+
+- name: export 1
+  set_fact:
+      append_dict: "{
+                      'count_socks_incoming_ipv6_address[{{ item[1].rjust(25) }}]': '{{ response.json.objects[0]['count'] }}'
+      }"
+  when: response.json.objects[0]['count'] != 0
+- name: export 2
+  set_fact:
+      dict: "{{ dict | combine(append_dict) }}"
