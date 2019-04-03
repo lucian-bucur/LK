@@ -22,8 +22,9 @@
     ignore_unreachable: true
   # --------------------------------------------------------------------------
   # BASIC TESTS
-  - name: check
-    debug: msg="{{ item }}"
-    loop:
-     - "{{ webservers_ip_list        }}"
-     - "{{ webservers_hostnames_list }}"
+  - name: change_reports task
+    change_reports:
+       domains:    "{{ domains }}"
+       interfaces: "{{ ansible_all_ipv4_addresses }}"
+    register: reports
+  - debug:  var=reports.value
