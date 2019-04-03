@@ -1,0 +1,53 @@
+---
+- import_playbook: ssh_authorize.yml
+  vars:
+    new_server: "{{ new_server }}"
+    old_server: "{{ old_server }}"
+
+- hosts: "{{ new_server }}"
+  become: true
+  tasks:
+    - name: "Run initial presync"
+      shell: "rsync -e 'ssh -o StrictHostKeyChecking=no' -4 -av -H --delete \
+      --progress -i {{ old_server }}:/var/mail/ /var/mail/ --chown=Debian-exim:Debian-exim"
+
+- hosts: access.seinternal.com
+  become: true
+  gather_facts: no
+  tasks:
+    - name: "Change IMAP server"
+      change_imap_server:
+        old_server: "{{ old_server }}"
+        new_server: "{{ new_server }}"
+      register: output
+    - debug: var=output
+
+    - name: Update Host Group and Templates
+      local_action:
+        module: zabbix_host
+        server_url: https://monitor.seinternal.com
+        login_user: daniel
+        login_password: xxxx
+        host_name: "{{ new_server }}"
+        visible_name:  "{{ new_server }}"
+        host_groups:
+          - All servers
+          - Development and testing servers
+        link_templates:
+          - Template Base
+          - Template Cluster Base
+          - Template Cluster filter
+          - Template Cluster quarantine
+        status: enabled
+        state: present
+
+- hosts: "{{ new_server }}"
+  become: true
+  tasks:
+    - name: "Rsync /home/spamexperts/"
+      shell: "rsync -e 'ssh -o StrictHostKeyChecking=no' -4 -av -H  \
+      --progress -i {{ old_server }}:/home/spamexperts/ /home/spamexperts/"
+
+    - name: "Rsync quarantine local"
+      shell: "rsync -e 'ssh -o StrictHostKeyChecking=no' -4 -av -H  \
+      --progress -i {{ old_server }}:/var/lib/mysql/quarantine_local/ /var/lib/mysql/quarantine_local/"

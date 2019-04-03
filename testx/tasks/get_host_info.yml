@@ -1,0 +1,27 @@
+---
+- hosts: localhost
+  become: true
+  tasks:
+    - name: Get host info
+      local_action:
+        module: zabbix_host_facts
+        server_url: https://monitor.seinternal.com
+        login_user:     "{{ username }}"
+        login_password: "{{ password }}"
+        host_name: "{{ new_server }}"
+        host_ip: 127.0.0.1
+        timeout: 10
+        exact_match: no
+        remove_duplicate: yes
+      register: new_server_info
+
+    - name: iterate items
+      debug:
+        msg: "{{ item.hostid }}"
+      with_items: "{{ new_server_info.hosts }}"
+
+    - set_fact:
+        hostname: "{{ item.hostid }}"
+      with_items: "{{ new_server_info.hosts }}"
+
+    - debug: var=hostname

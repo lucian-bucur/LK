@@ -1,0 +1,48 @@
+---
+- hosts: "{{ new_server }}"
+  become: true
+  tasks:
+    - name: "Get ssh key from new server"
+      fetch:
+        src: /root/.ssh/id_rsa.pub
+        dest: /tmp/ansible/
+      delegate_to: "{{ new_server }}"
+
+    - debug: var="hostvars['{{ new_server }}']['ansible_default_ipv4']['address']"
+
+- hosts: "{{ old_server }}"
+  vars:
+    new_server_ip: "{{ hostvars[new_server]['ansible_default_ipv4']['address'] }}"
+  become: true
+  tasks:
+    - name: "Ensure destination directory exists"
+      file:
+        path: "/tmp/ansible/{{ new_server }}/root/.ssh/"
+        state: directory
+
+    - name: "Copy SSH key to destination server"
+      copy:
+        src: "/tmp/ansible/{{ new_server }}/root/.ssh/id_rsa.pub"
+        dest: "/tmp/ansible/{{ new_server }}/root/.ssh/"
+      delegate_to: "{{ old_server }}"
+
+    - name: "Authorize SSH key"
+      authorized_key:
+        user: root
+        key: "{{ lookup('file', '/tmp/ansible/{{ new_server }}/root/.ssh/id_rsa.pub') }}"
+      delegate_to: "{{ old_server }}"
+
+    - name: "Authorize IP in TCP Wrappers"
+      lineinfile:
+        path: /etc/hosts.allow
+        line: "sshd: {{ new_server_ip }}"
+        create: yes
+
+    - name: "Authorize the server IP in Iptables"
+      iptables:
+        chain: INPUT
+        source: "{{ new_server_ip }}"
+        protocol: tcp
+        destination_port: 22
+        jump: ACCEPT
+        rule_num: 1
