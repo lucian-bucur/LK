@@ -25,6 +25,6 @@
   - name: change_reports task
     change_reports:
        domains:    "{{ domains }}"
-       interfaces: "{{ ansible_all_ipv4_addresses }}"
+       interfaces: "{{ ansible_all_ipv6_addresses }}"
     register: reports
   - debug:  var=reports.value

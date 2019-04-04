@@ -22,16 +22,24 @@
 
   # Step 2. Check that the ipv4 of the server is not listed in the domains array.
   - name: "Check that server ipv4 address is not listed in the domains array"
-    include: tasks/server_check_ipv4.yml
-    with_nested:
-      - "{{ domains }}"
-      - "{{ ansible_all_ipv4_addresses }}"
+    change_reports:
+       domains:    "{{ domains }}"
+       interfaces: "{{ ansible_all_ipv4_addresses }}"
+    register: reports
+
+  - name: export 1
+    set_fact:
+        dict: "{{ dict | combine(reports.value) }}"
 
   # Step 3. Check that the ipv6 of the server is not listed in the domains array.
   - name: "Check that server ipv6 address is not listed in the domains array"
-    include: tasks/server_check_ipv6.yml
-    with_nested:
-      - "{{ domains }}"
-      - "{{ ansible_all_ipv6_addresses }}"
+    change_reports:
+       domains:    "{{ domains }}"
+       interfaces: "{{ ansible_all_ipv6_addresses }}"
+    register: reports
+
+  - name: export 2
+    set_fact:
+        dict: "{{ dict | combine(reports.value) }}"
 
   - debug: var=dict
