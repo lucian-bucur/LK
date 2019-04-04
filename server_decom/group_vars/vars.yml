@@ -1,5 +1,0 @@
-domains: [ delivery.antispamcloud.com, submission.antispamcloud.com,
-           mx-us.antispamcloud.com,
-           mx-eu.antispamcloud.comg,
-           fallbackmx-us.antispamcloud.com, lastmx-us.antispamcloud.com,
-           fallbackmx-eu.antispamcloud.com, lastmx-eu.antispamcloud.com ]

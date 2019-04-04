@@ -43,3 +43,4 @@
         dict: "{{ dict | combine(reports.value) }}"
 
   - debug: var=dict
+  - copy: content="{{ dict }}" dest="/tmp/{{ inventory_hostname }}_reports"
