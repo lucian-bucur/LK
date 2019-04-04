@@ -10,8 +10,8 @@
     include: tasks/check_server_role.yml
     with_items:
       - quarantine
-      - looping
-      - archive
+      - logging
+      - archive_master
 
   # Step 1.b Check for the SOCKS support for this server on ansible_all_ipv4_addresses.
   - name: "Check socks support on this server"
