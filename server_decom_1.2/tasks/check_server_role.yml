@@ -7,13 +7,18 @@
   register: presence
   failed_when: presence.failed
 
-- name: export
+- name: export 1
   set_fact:
       append_dict: "{ 'server_hostname[{{ inventory_hostname }}] role={{ item }}' : 'True' }"
   when: not presence.changed
+- name: export 2
+  set_fact:
+      append_dict: "{ 'server_hostname[{{ inventory_hostname }}] role={{ item }}' : 'False' }"
+  when: presence.changed
 
 # REPORTS
 # ------------------------------------------------------------------------------
-- name: export
+- name: export 3
   set_fact:
       dict: "{{ dict | combine(append_dict) }}"
+  when: not presence.changed
