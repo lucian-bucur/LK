@@ -117,18 +117,13 @@
   - name: Install python-pip package
     become: true
     apt:
-      name: "{{ item }}"
+      name: ["python-pip"]
       state: present
       update_cache: yes
-    with_items:
-    - python-pip
 
   - name: Install pip prerequisites
     pip:
-      name: "{{ item }}"
-    with_items:
-    - requests
-    - mysql-connector
+      name: ["requests","mysql-connector"]
 
 # Replace the old host with new in the server
   - name: Replace old hostname
