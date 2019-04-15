@@ -1,0 +1,13 @@
+---
+- hosts: webservers
+  become: True
+  become_method: sudo
+  become_user:   root
+  gather_facts: false
+  vars_files:
+    - group_vars/vars.yml
+  roles:
+    - basic
+    - zabbix_login
+    - zabbix_get
+    - zabbix_post_hostname_change

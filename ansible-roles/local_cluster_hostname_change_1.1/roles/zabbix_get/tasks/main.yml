@@ -1,0 +1,35 @@
+---
+# -------------------------------------------------------------------------
+# ZABBIX API GET
+- name: module api_get_hostid
+  api_get:
+    select_key: "hostid"
+    api_url:    "{{ api_url       }}"
+    payload:    "{{ json_get_data }}"
+  register: api_get
+
+- name: export
+  set_fact:  api_get_hostid={{ api_get.value }}
+- debug: var=api_get_hostid
+
+- name: module api_get_tls_psk
+  api_get:
+    select_key: "tls_psk"
+    api_url:    "{{ api_url       }}"
+    payload:    "{{ json_get_data }}"
+  register: api_get
+
+- name: export
+  set_fact:  api_get_tls_psk={{ api_get.value }}
+- debug: var=api_get_tls_psk
+
+- name: module api_get_tls_psk_identity
+  api_get:
+    select_key: "tls_psk_identity"
+    api_url:    "{{ api_url       }}"
+    payload:    "{{ json_get_data }}"
+  register: api_get
+
+- name: export
+  set_fact:  api_get_tls_psk_identity={{ api_get.value }}
+- debug: var=api_get_tls_psk_identity

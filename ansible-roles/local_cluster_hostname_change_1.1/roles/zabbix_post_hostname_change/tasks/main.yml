@@ -1,0 +1,11 @@
+---
+# - name: cluster api cluster_api_configuration tasks
+#   import_tasks: cluster_api_configuration.yml
+#   ignore_unreachable: true
+# -------------------------------------------------------------------------
+# ZABBIX API POST
+- name: module api_post
+  api_post:
+    api_url:    "{{ api_url       }}"
+    payload:    "{{ json_get_data }}"
+  register: api_post

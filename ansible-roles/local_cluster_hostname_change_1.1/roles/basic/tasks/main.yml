@@ -1,0 +1,19 @@
+---
+# --------------------------------------------------------------------------
+# BASICS PREPARATION
+- name: sudoers configuration
+  lineinfile: dest=/etc/sudoers state=present
+              regexp='^%sudo' line="{{ item }}"
+  with_items:
+  - "%sudo ALL=(ALL) NOPASSWD: ALL"
+
+- name: modules python installation
+  raw: "sudo apt-get -y install {{ item }}"
+  with_items: ["python", "python-pip"]
+
+- name: upgrade pip
+  pip: name=pip state=latest
+  tags:
+    - packages
+- name: pip manage dependencies
+  pip: name=requests

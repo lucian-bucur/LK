@@ -1,0 +1,16 @@
+---
+# - name: cluster api cluster_api_configuration tasks
+#   import_tasks: cluster_api_configuration.yml
+#   ignore_unreachable: true
+# -------------------------------------------------------------------------
+# ZABBIX API LOGIN
+- name: module api_login
+  api_login:
+    api_url:  "{{ api_url  }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: api_login
+
+- debug: var=api_login.appkey
+- name: export
+  set_fact: appkey={{ api_login.appkey }}
