@@ -1,0 +1,65 @@
+#! /usr/bin/env python
+"""Run through the quarantine spool and convert any messages that are
+queued for an invalid quarantine server to the latest correct value."""
+import os
+import errno
+import sys
+import pickle
+import ConfigParser
+import MySQLdb
+import scandir
+if "--help" in sys.argv:
+    sys.stdout.write("The script runs through the quarantine spool "
+                     "and convert any messages that are "
+                     "queued for an invalid quarantine server "
+                     "to the latest correct value")
+    sys.exit(1)
+spool_directory = "/var/spool/quarantine"
+# Assume that we can handle getting all of the values at once.
+conf = ConfigParser.ConfigParser()
+conf.read("/root/.my.cnf")
+db = MySQLdb.connect(host="localhost", db="filter",
+                     user=conf.get("client", "user"),
+                     passwd=conf.get("client", "password"))
+c = db.cursor()
+c.execute("SELECT domain, quarantine_server FROM relays")
+quarantine_server = dict((domain, quarantine)
+                         for domain, quarantine in c.fetchall())
+c.close()
+db.close()
+conf = ConfigParser.ConfigParser()
+conf.read("/etc/spamexperts/migrate_quarantine.conf")
+valid_hosts = conf.get("imap", "host").split(",")
+debug = "--debug" in sys.argv
+for scan_file in scandir.scandir(spool_directory):
+    queue_fn = os.path.join(spool_directory, scan_file.name)
+    with open(queue_fn, "r") as tmp_queue_file:
+        metadata, msg = pickle.load(tmp_queue_file)
+    host = metadata["imap_host"]
+    # We ensure at RCPT TO time that all the domains have the same
+    # quarantine server.
+    domain = None
+    for mb in metadata["mailboxes"]:
+        if "@" not in mb:
+            domain = mb
+            break
+    if host not in valid_hosts:
+        if not domain:
+            print "No domain found in ", queue_fn, "skipping"
+        if domain in ("global", "restricted"):
+            metadata["imap_host"] = valid_hosts[0]
+            print "Need to change", host, "to", metadata["imap_host"], "for", domain
+        elif domain in quarantine_server:
+            metadata["imap_host"] = quarantine_server[domain]
+            print "Need to change", host, "to", metadata["imap_host"], "for", domain
+            if os.path.exists(queue_fn):
+                with open(queue_fn, "w") as tmp_queue_file:
+                    pickle.dump((metadata, msg), tmp_queue_file)
+        elif domain not in quarantine_server:
+            print "Domain", domain, "not found, removing file:", queue_fn
+            try:
+                os.remove(queue_fn)
+            except:
+                pass
+        elif debug:
+            print "No action for", queue_fn, "; debug info: %r" % metadata["mailboxes"]

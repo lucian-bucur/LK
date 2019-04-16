@@ -1,0 +1,18 @@
+---
+- import_playbook: ssh_authorize.yml
+  vars:
+    source:      "{{ new_server }}"
+    destination: "{{ old_server }}"
+
+- hosts: "{{ new_server }}"
+  become: true
+  gather_facts: no
+  tasks:
+    - name: Copy migrate server script.
+      template:
+        src: templates/migrate_server.j2
+        dest: /root/migrate_server.sh
+        mode: "a+x"
+        
+    - name: Pre Sync
+      command: /root/migrate_server.sh
