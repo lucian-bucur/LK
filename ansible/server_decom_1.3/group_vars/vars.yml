@@ -1,0 +1,12 @@
+domain_servers:  [ delivery.antispamcloud.com, submission.antispamcloud.com, mx-us.antispamcloud.com, fallbackmx-us.antispamcloud.com,
+lastmx-us.antispamcloud.com, mx-eu.antispamcloud.com, fallbackmx-eu.antispamcloud.com, lastmx-eu.antispamcloud.com ]
+svn_repo: "svn://svn.spamexperts.com/internal-systems/select_filtering_servers/"
+svn_dest: "~/svn/internal-systems/select_filtering_servers"
+spamexpert_path: "/home/spamexperts/"
+svn_local_path: "/root/svn"
+mx_server_conf: "mx_server.conf"
+old_mx_server: "server1.test12"
+new_mx_server: "server1.test13"
+incoming_mail_path: "/var/spool/exim/input/"
+outgoing_mail_path: "/var/spool/exim4-outgoing/input"
+api_password: "abcd1234"

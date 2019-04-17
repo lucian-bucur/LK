@@ -7,7 +7,7 @@
 
     - name: "Get PSK key"
       shell: "cat /etc/zabbix/zabbix_agentd.psk"
-      register: psk_key
+      register:  psk_key
     - debug: var=psk_key
 
 - hosts: management
@@ -17,71 +17,46 @@
    group_vars/vars.yml
 
   tasks:
-
   # 1 - 3. Run api to update hostname confguration
-
-  - name: "Change master server"
+  - name: "change server roles"
     change_server_roles:
       old_server: "{{ old_hostname }}"
       new_server: "{{ new_hostname }}"
       role: "master"
-    register: output
-
-  - name: "Change quarantine server"
-    change_server_roles:
-      old_server: "{{ old_hostname }}"
-      new_server: "{{ new_hostname }}"
-      role: "quarantine"
-    register: output
-
-  - name: "Change logging server"
-    change_server_roles:
-      old_server: "{{ old_hostname }}"
-      new_server: "{{ new_hostname }}"
-      role: "logging"
-    register: output
-
-  - name: "Change archive_master server"
-    change_server_roles:
-      old_server: "{{ old_hostname }}"
-      new_server: "{{ new_hostname }}"
-      role: "archive_master"
-    register: output
-
-  - name: "Change filter server"
-    change_server_roles:
-      old_server: "{{ old_hostname }}"
-      new_server: "{{ new_hostname }}"
-      role: "filter"
-    register: output
+    with_items:
+      - master
+      - quarantine
+      - logging
+      - archive_master
+      - filter
 
   - name: "Get host groups list"
     get_host_groups:
       host: "{{ new_hostname }}"
-    register: group_list
+    register:  group_list
   - debug: var=group_list
 
   - name: "Get host templates list"
     get_host_templates:
       host: "{{ new_hostname }}"
-    register: templates_list
+    register:  templates_list
   - debug: var=templates_list
 
   - name: "Update Host Group and Templates"
     local_action:
       module: zabbix_host
       server_url: https://monitor.seinternal.com
-      login_user: "{{ username }}"
-      login_password: "{{ password }}"
-      host_name: "{{ new_hostname }}"
+      login_user:        "{{ username }}"
+      login_password:    "{{ password }}"
+      host_name:     "{{ new_hostname }}"
       visible_name:  "{{ new_hostname }}"
       host_groups: "{{ group_list.meta }}"
       link_templates: "{{ templates_list.meta }}"
       status: enabled
       state: present
       interfaces:
-        - type: 1
-          main: 1
+        - type:  1
+          main:  1
           useip: 1
           ip: "{{ hostvars[old_hostname]['ansible_default_ipv4']['address'] }}"
           dns: "{{ new_hostname }}"
@@ -89,23 +64,23 @@
       tls_psk_identity: "{{ new_hostname }}_001"
       tls_connect: 2
       tls_psk: "{{ hostvars[old_hostname]['psk_key']['stdout'] }}"
-      tls_accept: 2
+      tls_accept:  2
 
   - name: "Update Host Group and Templates"
     local_action:
       module: zabbix_host
       server_url: https://monitor.seinternal.com
-      login_user: "{{ username }}"
-      login_password: "{{ password }}"
-      host_name: "{{ old_hostname }}"
+      login_user:        "{{ username }}"
+      login_password:    "{{ password }}"
+      host_name:     "{{ old_hostname }}"
       visible_name:  "{{ old_hostname }}"
       host_groups: "{{ group_list.meta }}"
       link_templates: "{{ templates_list.meta }}"
       status: enabled
       state: absent
       interfaces:
-        - type: 1
-          main: 1
+        - type:  1
+          main:  1
           useip: 1
           ip: "{{ hostvars[old_hostname]['ansible_default_ipv4']['address'] }}"
           dns: ""
@@ -149,7 +124,7 @@
   - name: Replace old hostname
     replace:
       path: "{{ item }}"
-      regexp: "{{ old_hostname }}"
+      regexp:  "{{ old_hostname }}"
       replace: "{{ new_hostname }}"
     with_items:
     - /etc/hostname
@@ -160,7 +135,6 @@
 # Adding back the immuable flah on the /etc/hosts /etc/hostname
   - name: Adding back the immuable flag
     shell: "chattr +i /etc/hosts /etc/hostname"
-
 
 # Change hostname in ENV
   - name: Shell command for new hostnam
@@ -202,7 +176,7 @@
   - name: Rename zabbix key in conf file
     replace:
       path: /etc/zabbix/zabbix_agentd.conf
-      regexp: "{{ old_hostname }}"
+      regexp:  "{{ old_hostname }}"
       replace: "{{ new_hostname }}"
 
 # 11. Restart services so that the configuration loads with new hostname

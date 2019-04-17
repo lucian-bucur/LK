@@ -1,0 +1,122 @@
+---
+- hosts: webservers
+  become: True
+  vars_files:
+    group_vars/vars.yml
+  vars:
+    dict: {}
+  tasks:
+
+  # 2. On access.seinternal.com: Remove the server's IP
+  # from the MX DNS entries.
+
+  - name: "Directory structure creation for svn"
+    file:
+      path: "{{ svn_local_path }}"
+      state: directory
+
+  - name: "SVN checkout for structure and file mx_servers.conf"
+    subversion:
+      repo: "{{ svn_repo }}"
+      dest: "{{ svn_dest }}"
+      update: yes
+
+  - name: "Change the mx_servers.conf file"
+      path: "{{svn_local_path/mx_server_conf}}"
+      replace: "{{ old_mx_server }}"
+      replace: "#{{ old_mx_server }}"
+
+  - name: "Commit the changes to svn"
+    shell: "svn commit -m "Removed server entry for {{ server }}. Decommissioned via automation.""
+    register: svn_commit_status
+
+  # Verify that are no active MX records pointing to server anymore
+
+  - name: "Atempt to move the outgoing trafic to another mx"
+    synchronize:
+      src: "{{ old_mx_server }}:{{ outgoing_mail_path }}"
+      dest: "{{ new_mx_server }}:{{ outgoing_mail_path }}"
+      checksum: yes
+      recursive: no
+      when: outgoing_count != 0
+
+  # 9. Run the crontab jobs manually
+  - name: "Manually run the crontab jobs"
+    shell: "crontab -l | cut -f 6- -d ' '"
+
+  - name: Disable cron
+    cron:
+      name: clean
+      env: yes
+      state: absent
+
+  # Remove the spamexperts packages from the server
+  - name: "Stop the spamexpert services"
+    service:
+      name: {{ item }}
+      state: stopped
+    with_items:
+      - exim4
+      - exim4-outgoing
+
+  - name: "Umount the paths used by the spamexpert software"
+    mount:
+      path: {{ item }}
+      state: unmounted
+    with_items:
+      - /var/spool/exim4/db
+      - /var/spool/exim4-outgoing/db
+
+  - name: "Remove apt packages"
+    apt: {{ item }}
+      state: absent
+    with_items:
+      - se-exim
+      - zabbix-agent
+      - se-zabbix-scripts
+      - se-tools
+      - se-python
+      - se-clamav-base
+      - se-clamav-daemon
+      - se-clamav-freshclam
+      - se-p0f
+      - mariadb-common
+      - mariadb-client
+      - nginx
+      - dovecot-core
+
+  - name: "Install the secure-delete package to wipe space"
+    apt:
+      name: secure-delete
+      state: present
+
+  - name: "Wipe free space"
+    shell: "sfill -v"
+
+- hosts: management
+  gather_facts: yes
+  become: true
+  vars_files:
+   group_vars/vars.yml
+
+  tasks:
+
+  - name: "Delete server from cluster configuration"
+    shell: "~/svn/sysadmin/trunk/utils/mod_standalone_server.py -d {{ old_mx_server }}"
+
+  - find:
+    paths: "/etc/*.conf/"
+    patterns: "*.conf"
+  register: files
+
+  - name: remove lines where the server is found
+    lineinfile:
+      path: {{item}}
+      regexp: "old_mx_server"
+      state: absent
+    with_items:
+      - files
+
+  - name: "Delete the entries from api"
+    shell: "curl --data 'responsetype=json&username=notifier&password={{ api_password }}&action=removemonitoringdata&hostname={{ old_mx_server }}'
+    https://my.spamexperts.com/includes/api.php"
