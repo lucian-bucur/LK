@@ -1,7 +1,7 @@
 ---
 - import_playbook: ssh_authorize.yml
   vars:
-    source:      "{{ new_server }}"
+    source: "{{ new_server }}"
     destination: "{{ old_server }}"
 
 - hosts: "{{ new_server }}"

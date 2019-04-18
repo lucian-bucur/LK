@@ -6,8 +6,6 @@
       fetch:
         src: /root/.ssh/id_rsa.pub
         dest: /tmp/ansible/
-      delegate_to: "{{ source }}"
-
     - debug: var="hostvars['{{ source }}']['ansible_default_ipv4']['address']"
 
 - hosts: "{{ destination }}"

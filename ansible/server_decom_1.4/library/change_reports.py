@@ -15,7 +15,7 @@ def main():
     interfaces = module.params["interfaces"]
     result     = dumpx(domains,interfaces,key='address')
 
-    module.exit_json(changed=True, value=result)
+    module.exit_json(changed=True, value=result )
 
 
 if __name__ == '__main__':

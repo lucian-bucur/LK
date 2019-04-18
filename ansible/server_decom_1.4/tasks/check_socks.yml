@@ -8,28 +8,32 @@
 
 - name: export 1
   set_fact:
-      append_dict: "{
+      out_socks_ipv4: "{
                       'count_socks_outgoing_ipv4_address[{{ item[0].rjust(25) }}]': '{{ response.json.objects[0]['count'] }}'
       }"
   when: response.json.objects[0]['count'] != 0
-- name: export 2
+
+- name: Gather data on socks only on server found in the domains list for ipv4 and outgoing
   set_fact:
-      dict: "{{ dict | combine(append_dict) }}"
+      socks_inc_ipv4 : "{{ socks_inc_ipv4 | combine(append_dict) }}"
+  when: response.json.objects[0]['count'] != 0
 
 - name: Check the SOCKS (delivery or submission) outgoing support for this server ipv6
   uri: url='https://localhost:30443/master/outgoing_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":"true"}'
        validate_certs=false
   register: response
 
-- name: export 1
+- name: Gather data on socks only on server found in the domains list for ipv6 and outgoing
   set_fact:
-      append_dict: "{
+      out_socks_ipv6: "{
                       'count(socks_outgoing_ipv6_address[{{ item[1].rjust(25) }}]': '{{ response.json.objects[0]['count'] }}'
       }"
   when: response.json.objects[0]['count'] != 0
-- name: export 2
+
+- name: Gather data on socks only on server found in the domains list for ipv6 and outgoing
   set_fact:
-      dict: "{{ dict | combine(append_dict) }}"
+      socks_inc_ipv6 : "{{ socks_inc_ipv4 | combine(append_dict) }}"
+  when: response.json.objects[0]['count'] != 0
 
   # INCOMING SUPPORT
   # ------------------------------------------------------------------------------
@@ -40,13 +44,15 @@
 
 - name: export 1
   set_fact:
-      append_dict: "{
+      inc_socks_ipv4: "{
                       'count_socks_incoming_ipv4_address[{{ item[0].rjust(25) }}]': '{{ response.json.objects[0]['count'] }}'
       }"
   when: response.json.objects[0]['count'] != 0
-- name: export 2
+
+- name: Gather data on socks only on server found in the domains list for ipv4 and incomming
   set_fact:
-    dict: "{{ dict | combine(append_dict) }}"
+    socks_inc_ipv4: "{{ socks_inc_ipv4 | combine(append_dict) }}"
+  when: response.json.objects[0]['count'] != 0
 
 - name: Check the SOCKS (delivery or submission) incoming support for this server ipv6
   uri: url='https://localhost:30443/master/incoming_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":"true"}'
@@ -55,10 +61,12 @@
 
 - name: export 1
   set_fact:
-      append_dict: "{
+      inc_socks_ipv6: "{
                       'count_socks_incoming_ipv6_address[{{ item[1].rjust(25) }}]': '{{ response.json.objects[0]['count'] }}'
       }"
   when: response.json.objects[0]['count'] != 0
-- name: export 2
+
+- name: Gather data on socks only on server found in the domains list for ipv6 and incomming
   set_fact:
-      dict: "{{ dict | combine(append_dict) }}"
+      socks_inc_ipv6: "{{ socks_inc_ipv6 | combine(append_dict) }}"
+  when: response.json.objects[0]['count'] != 0

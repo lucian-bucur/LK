@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import requests
 import json
 from subprocess import Popen,PIPE,STDOUT,call

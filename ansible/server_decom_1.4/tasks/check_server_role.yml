@@ -1,0 +1,28 @@
+---
+- name: "check if the server role is {{ item }}"
+  lineinfile:
+    dest: /etc/spamexperts/cluster.conf
+    line: "is_{{ item }} = True"
+  check_mode: yes
+  register: presence
+  failed_when: presence.failed
+
+- name: Reports roles gathering  found true
+  set_fact:
+      report_role: "{{ report_role | combine({ item : \"True\" }) }}"
+  when: not presence.changed
+
+- name: Reports role gathering found false
+  set_fact:
+      report_role: "{{ report_role | combine({ item : \"False\" }) }}"
+  when: presence.changed
+
+- debug:
+    var: report_role
+
+# REPORTS
+# ------------------------------------------------------------------------------
+# - name: Reports role gathering combined
+#   set_fact:
+#       Role_report: " {\"{{ inventory_hostname }}\" : {{ report }}}"
+#   when: not presence.changed

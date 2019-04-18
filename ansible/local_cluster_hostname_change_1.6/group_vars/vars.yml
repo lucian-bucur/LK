@@ -15,30 +15,3 @@ password: "he5NWzQ7amdb5b"
 username_auth: "spam"
 password_auth: "experts"
 apiurl: ""
-
-json_get_data: {
-             "jsonrpc": "2.0",
-             "method":  "host.get",
-             "params": {
-                     "output": ["hostid","tls_psk_identity", "tls_psk"],
-                     "filter": {
-                                  "host": "{{ old_hostname }}"
-                     }
-             },
-             "id": "1",
-             "auth": "{{ api_login.appkey }}"
-}
-
-json_post_data: {
-    "jsonrpc": "2.0",
-    "method": "host.update",
-    "params": {
-                    "hostid": "{{ get_api_hostid }}",
-                    "host":   "{{ old_hostname }}",
-                    "name":   "{{ new_hostname }}",
-                    "tls_psk_identity": "{{ new_hostname }}_{{ get_api_tls_psk }}.split('_')[1]",
-                    "tls_psk": "{{ get_api_tls_psk }}"
-    },
-    "id":   "1",
-    "auth": "{{ api_login.appkey }}"
-}

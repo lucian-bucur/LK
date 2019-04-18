@@ -1,0 +1,12 @@
+
+#!/bin/bash
+set -e
+old_server="{{ old_server }}"
+opts="--progress --exclude='*.BAK'"
+rsync -avz $opts -e 'ssh -o StrictHostKeyChecking=no' $old_server:/var/lib/mysql/mx_messages/          /var/lib/mysql/mx_messages/
+rsync -avz $opts -e 'ssh -o StrictHostKeyChecking=no' $old_server:/var/lib/mysql/mx_messages_outgoing/ /var/lib/mysql/mx_messages_outgoing/
+rsync -avz $opts -e 'ssh -o StrictHostKeyChecking=no' $old_server:/var/lib/mysql/statistics/           /var/lib/mysql/statistics/
+rsync -av  $opts -e 'ssh -o StrictHostKeyChecking=no' $old_server:/home/spamexperts/expire_log_data/   /home/spamexperts/expire_log_data/
+rsync -av  $opts -e 'ssh -o StrictHostKeyChecking=no' $old_server:/home/spamexperts/logging_api*       /home/spamexperts/
+rsync -av  $opts -e 'ssh -o StrictHostKeyChecking=no' $old_server:/var/lib/mysql/logging_local/        /var/lib/mysql/logging_local/
+rsync -av  $opts -e 'ssh -o StrictHostKeyChecking=no' $old_server:/var/lib/spamexperts/sphinx/        /var/lib/spamexperts/sphinx/
