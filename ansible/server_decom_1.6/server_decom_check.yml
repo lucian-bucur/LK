@@ -30,26 +30,30 @@
       - "{{ ansible_all_ipv4_addresses }}"
       - "{{ ansible_all_ipv6_addresses }}"
 
-
   # Check that the ipv4 of the server is not listed in the domains array.
 
   - name: "Check that server ipv4 address is not listed in the domains array"
     change_reports:
-       domains:    "{{ domain_servers }}"
+       domains: "{{ item }}"
        interfaces: "{{ ansible_all_ipv4_addresses }}"
-    register: report.report_ipv4_ipv6_domain_use
+    register: ipv4_list_domains
+    with_items:
+      - "{{ domain_servers }}"
 
   # Check that the ipv6 of the server is not listed in the domains array.
 
   - name: "Check that server ipv6 address is not listed in the domains array"
     change_reports:
-       domains:    "{{ domain_servers }}"
+       domains: "{{ item }}"
        interfaces: "{{ ansible_all_ipv6_addresses }}"
-    register: reports.ipv6_list_domains
+    register: ipv6_list_domains
+    with_items:
+      - "{{ domain_servers }}"
 
-  - template:
-      src: "{{ item }}.j2"
-      dest: /root/{{ item }}
+  - name: Moving sql files
+    template:
+        src: "{{ item }}.j2"
+        dest: /root/{{ item }}
     with_items:
       - query_inc.sql
       - query_out.sql
@@ -90,13 +94,16 @@
       report:
         role_check: "{{ report_role }}"
         socks_check:
-          outgoing:
-            ipv4: "{{ socks_out_ipv4 }}"
-            ipv6: "{{ socks_out_ipv6 }}"
-          incomming: 
-            ipv4: "{{ socks_inc_ipv4 }}"
-            ipv6: "{{ socks_inc_ipv6 }}"
           message_spool:
             /var/spool/archive/: "{{ matched_archive.files }}"
             /var/spool/local_scan/: "{{ matched_local_scan.files }}"
             /var/spool/index/: "{{ matched_index.files }}"
+          outgoing:
+            ipv4: "{{ socks_out_ipv4 }}"
+            ipv6: "{{ socks_out_ipv6 }}"
+          incomming:
+            ipv4: "{{ socks_inc_ipv4 }}"
+            ipv6: "{{ socks_inc_ipv6 }}"
+          domains_listing:
+            ipv4: "{{ ipv4_list_domains }}"
+            ipv6: "{{ ipv6_list_domains }}"

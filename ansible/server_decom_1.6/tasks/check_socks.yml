@@ -15,7 +15,7 @@
 
 - name: Gather data on socks only on server found in the domains list for ipv4 and outgoing
   set_fact:
-      socks_inc_ipv4 : "{{ socks_inc_ipv4 | combine(append_dict) }}"
+      socks_inc_ipv4 : "{{ socks_inc_ipv4 | combine(out_socks_ipv4) }}"
   when: response.json.objects[0]['count'] != 0
 
 - name: Check the SOCKS (delivery or submission) outgoing support for this server ipv6
@@ -32,7 +32,7 @@
 
 - name: Gather data on socks only on server found in the domains list for ipv6 and outgoing
   set_fact:
-      socks_inc_ipv6 : "{{ socks_inc_ipv4 | combine(append_dict) }}"
+      socks_inc_ipv6 : "{{ socks_inc_ipv4 | combine(out_socks_ipv6) }}"
   when: response.json.objects[0]['count'] != 0
 
   # INCOMING SUPPORT
@@ -51,7 +51,7 @@
 
 - name: Gather data on socks only on server found in the domains list for ipv4 and incomming
   set_fact:
-    socks_inc_ipv4: "{{ socks_inc_ipv4 | combine(append_dict) }}"
+    socks_inc_ipv4: "{{ socks_inc_ipv4 | combine(inc_socks_ipv4) }}"
   when: response.json.objects[0]['count'] != 0
 
 - name: Check the SOCKS (delivery or submission) incoming support for this server ipv6
@@ -68,5 +68,5 @@
 
 - name: Gather data on socks only on server found in the domains list for ipv6 and incomming
   set_fact:
-      socks_inc_ipv6: "{{ socks_inc_ipv6 | combine(append_dict) }}"
+      socks_inc_ipv6: "{{ socks_inc_ipv6 | combine(inc_socks_ipv6) }}"
   when: response.json.objects[0]['count'] != 0
