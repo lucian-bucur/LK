@@ -1,0 +1,8 @@
+
+#!/bin/bash
+set -e
+new_server="{{ new_server }}"
+domain_mask="{{ domain_mask }}"
+opts="--progress --exclude='*.BAK'"
+rsync -4 -avzP $opts -e 'ssh -o StrictHostKeyChecking=no' /var/lib/mysql/mx_messages_outgoing/$domain_mask  $new_server:/var/lib/mysql/mx_messages_outgoing/
+rsync -4 -avzP $opts -e 'ssh -o StrictHostKeyChecking=no' /var/lib/mysql/mx_messages/$domain_mask           $new_server:/var/lib/mysql/mx_messages/

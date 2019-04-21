@@ -1,6 +1,5 @@
 ---
 # 1. determine source_server (where the domain is located)
-
 - hosts: access.seinternal.com
   # become: true
   tasks:
@@ -11,27 +10,30 @@
       register: master
     - debug: var=master.meta[0]
 
-# 2. Check if archiving is enabled for the domain  (where the domain is located)
+    - name: "Check if archiving is enabled for the domain"
+      command: mysql filter -N -e "select logging_server from relays where domain='{{ domain_name }}'"
+      register: logging_server
+      delegate_to: "{{ master.meta[0] }}"
+    - debug: var=logging_server.stdout
 
     - name: "Check if archiving is enabled for the domain"
       command: mysql filter -N -e "select active from archive.options where domain='{{ domain_name }}'"
       register: active
       delegate_to: "{{ master.meta[0] }}"
-    - debug: var=active.stdout
 
-# 3. ssh authorization (source_server to destination_server)
+    - name: Exit if logging_server is not the same as source_server
+      fail: msg="logging_server {{ logging_server.stdout }}is not the same as source_server {{ old_server }}"
+      when: logging_server.stdout != old_server
 
+
+# 2. ssh authorization (source_server to destination_server)
 - import_playbook: ssh_authorize.yml
   vars:
     source: "{{ new_server }}"
     destination: "{{ old_server }}"
 
-# 4. move_logging storage for a domain between servers
-
+# 3. move_logging storage for a domain between servers
 - hosts: "{{ old_server }}"
-  vars:
-    domain_beg: "{{domain_name.split('.')[0] }}"
-    domain_end: "{{domain_name.split('.')[1] }}"
   tasks:
     - debug: msg="objective - moving domain {{ domain_name }} from logging src_server {{ old_server}} to logging dst_server {{ new_server }}"
     - name:  register cluster name
@@ -39,7 +41,7 @@
         cluster: "{{ new_server.partition('.')[2] }}"
     - name:  register table name
       set_fact:
-        table: "{{ domain_name | replace('.' + domain_end,'_' + domain_end) }}"
+        table: "{{ domain_name | replace('.','_') }}"
     - name:  register domain_mask name
       set_fact:
         domain_mask: "{{table + '.{frm,MYD,MYI}'}}"
@@ -52,31 +54,29 @@
           domain_mask: "{{ domain_mask }}"
     - debug: var=report
 
-
-# 5. pre-sync steps for target_server
-
-- hosts: "{{ new_server }}"
+# 4. pre-sync steps for target_server
+- hosts: "{{ old_server }}"
   become: true
   gather_facts: no
   tasks:
-    - name: Copy migrate logging script
+    - name: Copy migrate logging domain script
       template:
-        src: templates/migrate_logging.j2
-        dest: /root/migrate_logging.sh
+        src: templates/migrate_logging_domain.j2
+        dest: /root/migrate_logging_domain.sh
         mode: "a+x"
     - name: Pre Sync
-      command: /root/migrate_logging.sh
+      command: /root/migrate_logging_domain.sh
 
-# 6. set target_server as logging server
-
+# 5. set target_server as logging server
 - hosts: access.seinternal.com
   become: true
   gather_facts: no
   tasks:
     - name: "Update Cluster Config"
-      change_logging_server:
+      change_server_roles:
         old_server: "{{ old_server }}"
         new_server: "{{ new_server }}"
+        role: "logging"
       register: output
     - debug: var=output
 
@@ -108,7 +108,7 @@
     - name: "Add server to maintenance"
       local_action:
         module: zabbix_maintenance
-        name: "Logging migration to {{ new_server }}"
+        name: "Logging domain migration to {{ new_server }}"
         host_names:
           - "{{ old_server }}"
           - "{{ new_server }}"
@@ -126,6 +126,8 @@
     - debug:
       var: servers
 
+
+# 6. update license and configuration on target_server
 - hosts: "{{ new_server }}"
   become: true
   gather_facts: no
@@ -133,6 +135,7 @@
     - name: License and Configuration Update
       shell: python /home/spamexperts/update_updater.py ; /home/spamexperts/update/update -d --skip-version-check --skip-apt --skip-restart --skip-software-cache --skip-applications --skip-pip --skip-pip-cache --skip-preupdate --skip-postupdate --skip-preupdate-migrations --skip-postupdate-migrations --skip-salt --skip-wait-turn
 
+# 7. stop services on source_server
 - hosts: "{{ old_server }}"
   become: true
   gather_facts: no
@@ -156,12 +159,13 @@
     - name: Kill migrate exim data with fire
       command: pkill -f migrate_exim_data
 
+# 8. final migration for target_server
 - hosts: "{{ new_server }}"
   become: true
   gather_facts: no
   tasks:
     - name: Final migration
-      command: /root/migrate_logging.sh
+      command: /root/migrate_logging_domain.sh
     - name: License and Configuration Update
       shell: python /home/spamexperts/update_updater.py ; /home/spamexperts/update/update -d --skip-version-check --skip-apt --skip-restart --skip-software-cache --skip-applications --skip-pip --skip-pip-cache --skip-preupdate --skip-postupdate --skip-preupdate-migrations --skip-postupdate-migrations --skip-salt --skip-wait-turn
 
@@ -173,24 +177,6 @@
       loop:
         - mx_messages
         - mx_messages_outgoing
-        - logging_local
-
-- hosts: "{{ old_server }}"
-  become: true
-  gather_facts: no
-  tasks:
-    - name: Clean-up Logging App
-      file:
-        path: "{{ item }}"
-        state: absent
-      loop:
-        - /home/spamexperts/expire_log_data
-        - /home/spamexperts/logging_api
-        - /home/spamexperts/logging_api_wrapper.py
-        - /home/spamexperts/expire_statistics.py
-        - /home/spamexperts/truncate_unique_recipients.sh
-        - /etc/uwsgi/apps/logging.ini
-      tags: ['never', 'cleanup' ]
 
 - hosts: access.seinternal.com
   become: True
@@ -198,7 +184,7 @@
     - name: "Remove zabbix maintenance"
       local_action:
         module: zabbix_maintenance
-        name: "Quarantine migration to {{ new_server }}"
+        name: "Logging domain migration to {{ new_server }}"
         state: absent
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
