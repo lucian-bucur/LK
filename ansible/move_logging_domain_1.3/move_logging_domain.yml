@@ -16,15 +16,9 @@
       delegate_to: "{{ master.meta[0] }}"
     - debug: var=logging_server.stdout
 
-    - name: "Check if archiving is enabled for the domain"
-      command: mysql filter -N -e "select active from archive.options where domain='{{ domain_name }}'"
-      register: active
-      delegate_to: "{{ master.meta[0] }}"
-
     - name: Exit if logging_server is not the same as source_server
       fail: msg="logging_server {{ logging_server.stdout }} is not the same as source_server {{ old_server }}"
       when: logging_server.stdout != old_server
-
 
 # 2. ssh authorization (source_server to destination_server)
 - import_playbook: ssh_authorize.yml
@@ -32,42 +26,27 @@
     source: "{{ new_server }}"
     destination: "{{ old_server }}"
 
-# 3. move_logging storage for a domain between servers
-- hosts: "{{ old_server }}"
+# 3. check if archiving is enabled for the domain and if is the case purge old archive from the old logging server
+- hosts: access.seinternal.com
+  # become: true
   tasks:
-    - debug: msg="objective - moving domain {{ domain_name }} from logging src_server {{ old_server}} to logging dst_server {{ new_server }}"
-    - name:  register cluster name
-      set_fact:
-        cluster: "{{ new_server.partition('.')[2] }}"
-    - name:  register table name
-      set_fact:
-        table: "{{ domain_name | replace('.','_') }}"
-    - name:  register domain_mask name
-      set_fact:
-        domain_mask: "{{table + '.{frm,MYD,MYI}'}}"
+    - name: "Check if archiving is enabled for the domain"
+      command: mysql filter -N -e "select active from archive.options where domain='{{ domain_name }}'"
+      register: active
+      delegate_to: "{{ master.meta[0] }}"
 
-    - set_fact:
-        report:
-          cluster: "{{ cluster }}"
-          table:   "{{ table }}"
-          domain:  "{{ domain_name }}"
-          domain_mask: "{{ domain_mask }}"
-    - debug: var=report
-
-# 4. pre-sync logging domain migration steps for target_server
-- hosts: "{{ old_server }}"
-  become: true
-  gather_facts: no
-  tasks:
-    - name: Copy migrate logging domain script
+    - name: "Create remove_index script"
       template:
-        src: templates/migrate_logging_domain.j2
-        dest: /root/migrate_logging_domain.sh
+        src: templates/remove_index.py.j2
+        dest: /tmp/remove_index.sh
         mode: "a+x"
-    - name: Pre Sync
-      command: /root/migrate_logging_domain.sh
+      delegate_to: "{{ master.meta[0] }}"
+    - name: "purge the old archive index from the old logging server"
+      command: python /tmp/remove_index.py
+      when: active.stdout == 1
+      delegate_to: "{{ master.meta[0] }}"
 
-# 5. set target_server as logging server
+# 4. set target_server as logging server
 - hosts: access.seinternal.com
   become: true
   gather_facts: no
@@ -126,8 +105,7 @@
     - debug:
       var: servers
 
-
-# 6. update license and configuration on target_server
+# 5. update license and configuration on target_server
 - hosts: "{{ new_server }}"
   become: true
   gather_facts: no
@@ -135,7 +113,7 @@
     - name: License and Configuration Update
       shell: python /home/spamexperts/update_updater.py ; /home/spamexperts/update/update -d --skip-version-check --skip-apt --skip-restart --skip-software-cache --skip-applications --skip-pip --skip-pip-cache --skip-preupdate --skip-postupdate --skip-preupdate-migrations --skip-postupdate-migrations --skip-salt --skip-wait-turn
 
-# 7. stop services on source_server
+# 6. stop services on source_server
 - hosts: "{{ old_server }}"
   become: true
   gather_facts: no
@@ -152,6 +130,7 @@
     - name: Flush MySQL Tables
       command: mysqladmin flush-tables
 
+# 7. stop exim data on all filtering servers
 - hosts: "{{ servers }}"
   become: true
   gather_facts: no
@@ -159,7 +138,38 @@
     - name: Kill migrate exim data with fire
       command: pkill -f migrate_exim_data
 
-# 8. final logging domain migration steps for target_server
+# 8. move logging storage for a domain between servers
+- hosts: "{{ new_server }}"
+  become: true
+  gather_facts: no
+  tasks:
+    - name:  register cluster name
+      set_fact:
+        cluster: "{{ old_server.partition('.')[2] }}"
+    - name:  register table name
+      set_fact:
+        table: "{{ domain_name | replace('.','_') }}"
+    - name:  register domain_mask name
+      set_fact:
+        domain_mask: "{{table + '.{frm,MYD,MYI}'}}"
+    - set_fact:
+        report:
+          cluster: "{{ cluster }}"
+          table:   "{{ table }}"
+          domain:  "{{ domain_name }}"
+          domain_mask: "{{ domain_mask }}"
+    - debug: var=report
+
+    - name: "Copy migrate logging domain script"
+      template:
+        src: templates/migrate_logging_domain.j2
+        dest: /root/migrate_logging_domain.sh
+        mode: "a+x"
+    - name: "execute pre-sync"
+      command: /root/migrate_logging_domain.sh
+
+
+# 9. final logging domain migration steps for target_server
 - hosts: "{{ new_server }}"
   become: true
   gather_facts: no
@@ -178,6 +188,7 @@
         - mx_messages
         - mx_messages_outgoing
 
+# 10. remove zabbix maintenance for target_server
 - hosts: access.seinternal.com
   become: True
   tasks:
