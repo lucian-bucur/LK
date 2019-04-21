@@ -22,7 +22,7 @@
       delegate_to: "{{ master.meta[0] }}"
 
     - name: Exit if logging_server is not the same as source_server
-      fail: msg="logging_server {{ logging_server.stdout }}is not the same as source_server {{ old_server }}"
+      fail: msg="logging_server {{ logging_server.stdout }} is not the same as source_server {{ old_server }}"
       when: logging_server.stdout != old_server
 
 
@@ -54,7 +54,7 @@
           domain_mask: "{{ domain_mask }}"
     - debug: var=report
 
-# 4. pre-sync steps for target_server
+# 4. pre-sync logging domain migration steps for target_server
 - hosts: "{{ old_server }}"
   become: true
   gather_facts: no
@@ -159,7 +159,7 @@
     - name: Kill migrate exim data with fire
       command: pkill -f migrate_exim_data
 
-# 8. final migration for target_server
+# 8. final logging domain migration steps for target_server
 - hosts: "{{ new_server }}"
   become: true
   gather_facts: no
