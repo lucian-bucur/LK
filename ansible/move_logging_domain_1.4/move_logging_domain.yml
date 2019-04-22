@@ -119,9 +119,6 @@
     - name: mysql filter table update on relays
       command: mysql filter -e "update relays set logging_server='{{ new_server }}' where logging_server='{{ old_server }}'"
 
-    - name: mysql filter table update on outgoing
-      command: mysql filter -e "update outgoing set logging_server='{{ new_server }}' where logging_server='{{ old_server }}'"
-
     - name: Repair transferred tables
       command: "mysqlcheck --auto-repair {{ item}}"
       loop:
