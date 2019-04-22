@@ -125,7 +125,22 @@
         - mx_messages
         - mx_messages_outgoing
 
-# 8. remove zabbix maintenance for source_server & target_server
+# 8. start services on source_server
+- hosts: "{{ old_server }}"
+  become: true
+  gather_facts: no
+  tasks:
+    - name: Start services
+      service:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - mysql
+        - sphinxsearch
+        - logging_scheduled
+        - logging_tasks
+
+# 9. remove zabbix maintenance for source_server & target_server
 - hosts: access.seinternal.com
   gather_facts: no
   tasks:
@@ -140,21 +155,3 @@
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
