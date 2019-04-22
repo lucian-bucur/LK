@@ -1,16 +1,16 @@
 ---
 # 1. determine source_server (where the domain is located)
 - hosts: access.seinternal.com
-  # become: true
+  gather_facts: no
   tasks:
     - name: "Get master server"
       get_servers_with_role:
-        host: "{{ new_server }}"
+        host: "{{ old_server }}"
         role: master
       register: master
     - debug: var=master.meta[0]
 
-    - name: "Check if archiving is enabled for the domain"
+    - name: "Check logging server name"
       command: mysql filter -N -e "select logging_server from relays where domain='{{ domain_name }}'"
       register: logging_server
       delegate_to: "{{ master.meta[0] }}"
@@ -28,12 +28,13 @@
 
 # 3. check if archiving is enabled for the domain and if is the case purge old archive from the old logging server
 - hosts: access.seinternal.com
-  # become: true
+  gather_facts: no
   tasks:
     - name: "Check if archiving is enabled for the domain"
       command: mysql filter -N -e "select active from archive.options where domain='{{ domain_name }}'"
       register: active
       delegate_to: "{{ master.meta[0] }}"
+    - debug: var=active.stdout
 
     - name: "Create remove_index script"
       template:
@@ -46,44 +47,10 @@
       when: active.stdout == 1
       delegate_to: "{{ master.meta[0] }}"
 
-# 4. set target_server as logging server
+# 4. set source_server & target_server to maintenance
 - hosts: access.seinternal.com
-  become: true
   gather_facts: no
   tasks:
-    - name: "Update Cluster Config"
-      change_server_roles:
-        old_server: "{{ old_server }}"
-        new_server: "{{ new_server }}"
-        role: "logging"
-      register: output
-    - debug: var=output
-
-    - name: "Get host groups list"
-      get_host_groups:
-        host: "{{ new_server }}"
-      register: group_list
-    - debug: var=group_list
-
-    - name: "Get host templates list"
-      get_host_templates:
-        host: "{{ new_server }}"
-      register: templates_list
-    - debug: var=templates_list
-
-    - name: "Update Host Group and Templates"
-      local_action:
-        module: zabbix_host
-        server_url: https://monitor.seinternal.com
-        login_user: "{{ zabbix_user }}"
-        login_password: "{{ zabbix_password }}"
-        host_name: "{{ new_server }}"
-        visible_name:  "{{ new_server }}"
-        host_groups: "{{ group_list.meta }}"
-        link_templates: "{{ templates_list.meta }}"
-        status: enabled
-        state: present
-
     - name: "Add server to maintenance"
       local_action:
         module: zabbix_maintenance
@@ -97,23 +64,7 @@
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
 
-    - name: "Get filtering server list"
-      get_servers_with_role:
-        host: "{{ old_server }}"
-        role: filter
-      register: servers
-    - debug:
-      var: servers
-
-# 5. update license and configuration on target_server
-- hosts: "{{ new_server }}"
-  become: true
-  gather_facts: no
-  tasks:
-    - name: License and Configuration Update
-      shell: python /home/spamexperts/update_updater.py ; /home/spamexperts/update/update -d --skip-version-check --skip-apt --skip-restart --skip-software-cache --skip-applications --skip-pip --skip-pip-cache --skip-preupdate --skip-postupdate --skip-preupdate-migrations --skip-postupdate-migrations --skip-salt --skip-wait-turn
-
-# 6. stop services on source_server
+# 5. stop services on source_server
 - hosts: "{{ old_server }}"
   become: true
   gather_facts: no
@@ -130,15 +81,7 @@
     - name: Flush MySQL Tables
       command: mysqladmin flush-tables
 
-# 7. stop exim data on all filtering servers
-- hosts: "{{ servers }}"
-  become: true
-  gather_facts: no
-  tasks:
-    - name: Kill migrate exim data with fire
-      command: pkill -f migrate_exim_data
-
-# 8. move logging storage for a domain between servers
+# 6. move logging storage for a domain between servers
 - hosts: "{{ new_server }}"
   become: true
   gather_facts: no
@@ -165,22 +108,19 @@
         src: templates/migrate_logging_domain.j2
         dest: /root/migrate_logging_domain.sh
         mode: "a+x"
-    - name: "execute pre-sync"
+    - name: "execute migrate logging domain script"
       command: /root/migrate_logging_domain.sh
 
-
-# 9. final logging domain migration steps for target_server
+# 7. update filter table for target_server
 - hosts: "{{ new_server }}"
   become: true
   gather_facts: no
   tasks:
-    - name: Final migration
-      command: /root/migrate_logging_domain.sh
-    - name: License and Configuration Update
-      shell: python /home/spamexperts/update_updater.py ; /home/spamexperts/update/update -d --skip-version-check --skip-apt --skip-restart --skip-software-cache --skip-applications --skip-pip --skip-pip-cache --skip-preupdate --skip-postupdate --skip-preupdate-migrations --skip-postupdate-migrations --skip-salt --skip-wait-turn
-
-    - name: mysql filter table update
+    - name: mysql filter table update on relays
       command: mysql filter -e "update relays set logging_server='{{ new_server }}' where logging_server='{{ old_server }}'"
+
+    - name: mysql filter table update on outgoing
+      command: mysql filter -e "update outgoing set logging_server='{{ new_server }}' where logging_server='{{ old_server }}'"
 
     - name: Repair transferred tables
       command: "mysqlcheck --auto-repair {{ item}}"
@@ -188,14 +128,17 @@
         - mx_messages
         - mx_messages_outgoing
 
-# 10. remove zabbix maintenance for target_server
+# 8. remove zabbix maintenance for source_server & target_server
 - hosts: access.seinternal.com
-  become: True
+  gather_facts: no
   tasks:
     - name: "Remove zabbix maintenance"
       local_action:
         module: zabbix_maintenance
         name: "Logging domain migration to {{ new_server }}"
+        host_names:
+          - "{{ old_server }}"
+          - "{{ new_server }}"
         state: absent
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
