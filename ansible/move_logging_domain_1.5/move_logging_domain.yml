@@ -51,7 +51,7 @@
 - hosts: access.seinternal.com
   gather_facts: no
   tasks:
-    - name: "Add server to maintenance"
+    - name: "Add zabbix maintenance"
       local_action:
         module: zabbix_maintenance
         name: "Logging domain migration to {{ new_server }}"
@@ -155,3 +155,33 @@
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
+
+# 10. rebuild index on new logging server
+- hosts: access.seinternal.com
+  gather_facts: no
+  tasks:
+    - name: "Create add_index script"
+      template:
+        src: templates/rebuild_index.sh.j2
+        dest: /tmp/rebuild_index.sh
+        mode: "a+x"
+      delegate_to: "{{ master.meta[0] }}"
+    - name: "rebuild archive index from the new logging server"
+      command: /tmp/rebuild_index.sh
+      when: active.stdout == 1
+      delegate_to: "{{ master.meta[0] }}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
