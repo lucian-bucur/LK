@@ -133,7 +133,7 @@
     - name: "Get filtering server list"
       get_servers_with_role:
         host: "{{ old_server }}"
-        role: filter
+        role: filtering
       register: servers
     - debug: var=servers
 

@@ -16,16 +16,7 @@ def main():
     role = module.params["role"]
     service = ClusterApiService(old_server)
     service.get_cluster_conf()
-    if role == "quarantine":
-        result = service.replace("imap", old_server, new_server)
-    elif role == "logging":
-        result = service.replace("logging", old_server, new_server)
-    elif role == "master":
-        result = service.replace("master", old_server, new_server)
-    elif role == "archive_master":
-        result = service.replace("archive_master", old_server, new_server)
-    elif role == "filtering":
-        result = service.replace("filtering", old_server, new_server)
+    result = service.replace(role, old_server, new_server)
     module.exit_json(changed=True, meta=result)
 
 

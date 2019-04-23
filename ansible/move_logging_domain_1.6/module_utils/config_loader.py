@@ -1,6 +1,6 @@
 import ConfigParser
 import StringIO
-from configs import configs
+from ansible.module_utils.configs import configs
 
 
 class ConfigLoader:

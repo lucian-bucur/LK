@@ -15,7 +15,7 @@ def main():
     role= module.params["role"]
     service = ClusterApiService(host)
     service.get_cluster_conf()
-    result = service.get_servers_with_role(host,role)
+    result = service.get_servers_with_role(role)
 
     module.exit_json(changed=True, meta=result)
 

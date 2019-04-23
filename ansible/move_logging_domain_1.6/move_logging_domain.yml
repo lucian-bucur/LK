@@ -69,6 +69,8 @@
   become: true
   gather_facts: no
   tasks:
+    - name: Flush MySQL Tables
+      command: mysqladmin flush-tables
     - name: Stop services
       service:
         name: "{{ item }}"
@@ -76,12 +78,9 @@
       loop:
         - logging_tasks
         - logging_scheduled
-        - sphinxsearch
         - mysql
-    - name: Flush MySQL Tables
-      command: mysqladmin flush-tables
 
-# 6. move logging storage for a domain between servers
+# 6. migrate logging storage for a domain between servers
 - hosts: "{{ new_server }}"
   become: true
   gather_facts: no
@@ -103,13 +102,16 @@
           domain_mask: "{{ domain_mask }}"
     - debug: var=report
 
-    - name: "Copy migrate logging domain script"
-      template:
-        src: templates/migrate_logging_domain.j2
-        dest: /root/migrate_logging_domain.sh
-        mode: "a+x"
-    - name: "execute migrate logging domain script"
-      command: /root/migrate_logging_domain.sh
+    - name: Flush MySQL Tables
+      command: mysqladmin flush-tables
+
+    - name: "migrate logging domain for /var/lib/mysql/mx_messages"
+      shell: "rsync -4 -avzP --progress --exclude='*.BAK' -e 'ssh -o StrictHostKeyChecking=no' \
+              {{ old_server }}:/var/lib/mysql/mx_messages/{{ domain_mask }}  /var/lib/mysql/mx_messages/"
+
+    - name: "migrate logging domain for /var/lib/mysql/mx_messages_outgoing"
+      shell: "rsync -4 -avzP --progress --exclude='*.BAK' -e 'ssh -o StrictHostKeyChecking=no' \
+              {{ old_server }}:/var/lib/mysql/mx_messages_outgoing/{{ domain_mask }}  /var/lib/mysql/mx_messages_outgoing/"
 
 # 7. update filter table for target_server
 - hosts: "{{ new_server }}"
@@ -136,7 +138,6 @@
         state: started
       loop:
         - mysql
-        - sphinxsearch
         - logging_scheduled
         - logging_tasks
 
@@ -160,7 +161,7 @@
 - hosts: access.seinternal.com
   gather_facts: no
   tasks:
-    - name: "Create add_index script"
+    - name: "Create rebuild_index script"
       template:
         src: templates/rebuild_index.sh.j2
         dest: /tmp/rebuild_index.sh

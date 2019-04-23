@@ -1,9 +1,0 @@
-
-#!/bin/bash
-set -e
-old_server="{{ old_server }}"
-domain_mask="{{ domain_mask }}"
-opts="--progress --exclude='*.BAK'"
-mysqladmin flush-tables
-rsync -4 -avzP $opts -e 'ssh -o StrictHostKeyChecking=no' $old_server:/var/lib/mysql/mx_messages_outgoing/$domain_mask  /var/lib/mysql/mx_messages_outgoing/
-rsync -4 -avzP $opts -e 'ssh -o StrictHostKeyChecking=no' $old_server:/var/lib/mysql/mx_messages/$domain_mask           /var/lib/mysql/mx_messages/

@@ -93,9 +93,9 @@ class ClusterApiService:
         elif service.get("list") is False:
             raise Exception("Service %s values is not a list" % service_key)
         value = self.config_loader.parser.get(service.get("section"), service.get("option"))
-        if new_value in value:
+        if old_value in value:
             value.remove(old_value)
-            value.add(new_value)
+            value.append(new_value)
         self.config_loader.parser.set(service.get("section"), service.get("option"), value)
         self.post(service)
 
