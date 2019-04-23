@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 from ansible.module_utils.basic import *
-from ansible.module_utils.cluster_api_tools import get_host_groups
+from ansible.module_utils.cluster_api_service import ClusterApiService
+
 
 
 def main():
@@ -10,8 +11,10 @@ def main():
     }
 
     module = AnsibleModule(argument_spec=fields)
-    host= module.params["host"]
-    result = get_host_groups(host)
+    host = module.params["host"]
+    service = ClusterApiService(host)
+    service.get_cluster_conf()
+    result = service.get_host_templates(host)
 
     module.exit_json(changed=True, meta=result)
 
