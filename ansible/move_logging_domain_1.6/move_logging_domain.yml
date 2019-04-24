@@ -17,7 +17,7 @@
     - debug: var=logging_server.stdout
 
     - name: Exit if logging_server is not the same as source_server
-      fail: msg="logging_server {{ logging_server.stdout }} is not the same as source_server {{ old_server }}"
+      fail: msg="{{ domain_name }} is not on source_server {{ old_server }}, but on {{ logging_server.stdout }}"
       when: logging_server.stdout != old_server
 
 # 2. ssh authorization (source_server to destination_server)
@@ -36,7 +36,7 @@
       delegate_to: "{{ master.meta[0] }}"
     - debug: var=active.stdout
 
-    - name: "Create remove_index script"
+    - name: "Create remove_index script (purge the old archive index from the old logging server)"
       template:
         src: templates/remove_index.py.j2
         dest: /tmp/remove_index.sh
@@ -97,8 +97,6 @@
     - set_fact:
         report:
           cluster: "{{ cluster }}"
-          table:   "{{ table }}"
-          domain:  "{{ domain_name }}"
           domain_mask: "{{ domain_mask }}"
     - debug: var=report
 
