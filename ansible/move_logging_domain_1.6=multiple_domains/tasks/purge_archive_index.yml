@@ -1,0 +1,17 @@
+---
+- name: "Check if archiving is enabled for the domain '{{ item }}'"
+  command: mysql filter -N -e "select active from archive.options where domain='{{ item }}'"
+  register: active
+  delegate_to: "{{ master.meta[0] }}"
+- debug: var=active.stdout
+
+- name: "Create remove_index script (purge the old archive index from the old logging server)"
+  template:
+    src: templates/remove_index.py.j2
+    dest: /tmp/remove_index.sh
+    mode: "a+x"
+  delegate_to: "{{ master.meta[0] }}"
+- name: "purge the old archive index from the old logging server"
+  command: python /tmp/remove_index.py
+  when: active.stdout == 1
+  delegate_to: "{{ master.meta[0] }}"

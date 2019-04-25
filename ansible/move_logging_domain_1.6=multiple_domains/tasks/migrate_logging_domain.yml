@@ -1,0 +1,30 @@
+---
+- name:  register cluster name
+  set_fact:
+    cluster: "{{ old_server.partition('.')[2] }}"
+- name:  register domain name
+  set_fact:
+    domain_name: "{{ item }}"
+- name: register table name (depends on domain name)
+  set_fact:
+    table: "{{ domain_name | replace('.','_') }}"
+- name:  register domain_mask name (depends on domain name and mask)
+  set_fact:
+    domain_mask: "{{table + '.{frm,MYD,MYI}'}}"
+- set_fact:
+    report:
+      cluster: "{{ cluster }}"
+      domain_name: "{{ domain_name}}"
+      domain_mask: "{{ domain_mask }}"
+- debug: var=report
+
+- name: Flush MySQL Tables
+  command: mysqladmin flush-tables
+
+- name: "migrate logging domain for /var/lib/mysql/mx_messages"
+  shell: "rsync -4 -avzP --progress --exclude='*.BAK' -e 'ssh -o StrictHostKeyChecking=no' \
+          {{ old_server }}:/var/lib/mysql/mx_messages/{{ domain_mask }}  /var/lib/mysql/mx_messages/"
+
+- name: "migrate logging domain for /var/lib/mysql/mx_messages_outgoing"
+  shell: "rsync -4 -avzP --progress --exclude='*.BAK' -e 'ssh -o StrictHostKeyChecking=no' \
+          {{ old_server }}:/var/lib/mysql/mx_messages_outgoing/{{ domain_mask }}  /var/lib/mysql/mx_messages_outgoing/"
