@@ -15,7 +15,7 @@
     - name: "Check the logging domain server"
       include: tasks/check_logging_domain_server.yml
       register: check_logging_domain_server
-      loop:
+      with_items:
         - "{{ domains }}"
 
 # 2. ssh authorization (source_server to destination_server)
@@ -33,7 +33,7 @@
     - name: "Purge archive index from old logging server"
       include: tasks/purge_archive_index.yml
       register: purge_archive_index
-      loop:
+      with_items:
         - "{{ domains }}"
 
 # 4. set source_server & target_server to maintenance
@@ -79,7 +79,7 @@
     - name: "Check the server roles"
       include: tasks/migrate_logging_domain.yml
       register: migrate_logging_domain
-      loop:
+      with_items:
         - "{{ domains }}"
 
 # 7. update filter table for target_server

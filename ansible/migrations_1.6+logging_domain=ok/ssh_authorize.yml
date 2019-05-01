@@ -10,7 +10,7 @@
 
 - hosts: "{{ destination }}"
   vars:
-      source_ip: "{{ hostvars[source]['ansible_default_ipv4']['address'] }}"
+    source_ip: "{{ hostvars[source]['ansible_default_ipv4']['address'] }}"
   become: true
   tasks:
     - name: "Ensure destination directory exists"

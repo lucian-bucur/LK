@@ -1,0 +1,66 @@
+---
+- import_playbook: ssh_authorize.yml
+  vars:
+    source: "{{ new_server }}"
+    destination: "{{ old_server }}"
+
+- hosts: "{{ new_server }}"
+  become: true
+  gather_facts: no
+  tasks:
+    - name: "Stop services on the new server"
+      service:
+        name: "{{ item }}"
+        state: stopped
+      with_items:
+        - zabbix-agent
+        - mysql
+        - exim4
+        - exim4-outgoing
+        - nginx
+        - cron
+
+    - name: "Copy migrate server script"
+      template:
+        src: templates/migrate_server.j2
+        dest: /root/migrate_server.sh
+        mode: "a+x"
+
+    - name: "Pre Sync"
+      shell: "/root/migrate_server.sh"
+
+- hosts: access.seinternal.com
+  tasks:
+    - name: "Add server to maintenance"
+      local_action:
+        module: zabbix_maintenance
+        name: "Quarantine migration to {{ new_server }}"
+        host_names:
+          - "{{ hostname }}"
+        state: present
+        collect_data: False
+        minutes: 720
+        server_url: https://monitor.seinternal.com
+        login_user: "{{ zabbix_user }}"
+        login_password: "{{ zabbix_password }}"
+      tags: ['never', 'final_sync' ]
+
+- hosts: "{{ old_server }}"
+  become: true
+  tasks:
+    - name: "Stop services on the old server"
+      service:
+        name: "{{ item }}"
+        state: stopped
+      with_items:
+        - zabbix-agent
+        - mysql
+        - exim4
+        - exim4-outgoing
+        - nginx
+        - cron
+      tags: ['never', 'final_sync' ]
+
+    - name: "Final Sync"
+      shell: "/root/migrate_server.sh"
+      tags: ['never', 'final_sync' ]

@@ -7,7 +7,7 @@
     domain_name: "{{ item }}"
 - name: register table name (depends on domain name)
   set_fact:
-    table: "{{ domain_name | replace('.','_') }}"
+    table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
 - name:  register domain_mask name (depends on domain name and mask)
   set_fact:
     domain_mask: "{{table + '.{frm,MYD,MYI}'}}"
@@ -23,8 +23,8 @@
 
 - name: "migrate logging domain for /var/lib/mysql/mx_messages"
   shell: "rsync -4 -avzP --progress --exclude='*.BAK' -e 'ssh -o StrictHostKeyChecking=no' \
-          {{ old_server }}:/var/lib/mysql/mx_messages/{{ domain_mask }}  /var/lib/mysql/mx_messages/"
+          {{ old_server }}:/var/lib/mysql/mx_messages/{{ domain_mask }}  /var/lib/mysql/mx_messages/ || echo"
 
 - name: "migrate logging domain for /var/lib/mysql/mx_messages_outgoing"
   shell: "rsync -4 -avzP --progress --exclude='*.BAK' -e 'ssh -o StrictHostKeyChecking=no' \
-          {{ old_server }}:/var/lib/mysql/mx_messages_outgoing/{{ domain_mask }}  /var/lib/mysql/mx_messages_outgoing/"
+          {{ old_server }}:/var/lib/mysql/mx_messages_outgoing/{{ domain_mask }}  /var/lib/mysql/mx_messages_outgoing/ || echo"
