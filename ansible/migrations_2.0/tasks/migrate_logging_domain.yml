@@ -21,10 +21,10 @@
 - name: Flush MySQL Tables
   command: mysqladmin flush-tables
 
-- name: "migrate logging domain for /var/lib/mysql/mx_messages"
+- name: "Migrate logging domain for /var/lib/mysql/mx_messages"
   shell: "rsync -4 -avzP --progress --exclude='*.BAK' -e 'ssh -o StrictHostKeyChecking=no' \
           {{ old_server }}:/var/lib/mysql/mx_messages/{{ domain_mask }}  /var/lib/mysql/mx_messages/ || echo"
 
-- name: "migrate logging domain for /var/lib/mysql/mx_messages_outgoing"
+- name: "Migrate logging domain for /var/lib/mysql/mx_messages_outgoing"
   shell: "rsync -4 -avzP --progress --exclude='*.BAK' -e 'ssh -o StrictHostKeyChecking=no' \
           {{ old_server }}:/var/lib/mysql/mx_messages_outgoing/{{ domain_mask }}  /var/lib/mysql/mx_messages_outgoing/ || echo"
