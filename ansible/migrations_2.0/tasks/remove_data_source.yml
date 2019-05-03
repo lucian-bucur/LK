@@ -15,18 +15,13 @@
       table: "{{ table}}"
 - debug: var=report
 
-- name: "Check if archiving is enabled for the domain = {{ item }}"
-  command: mysql filter -N -e "select active from archive.options where domain='{{ item }}'"
-  register: active
-- debug: var=active.stdout
 
 - name: "Remove data from the logging source_server"
-  command: mysql -e "truncate table {{ table }}" '{{ index }}'
+  command: mysql -e "truncate table `{{ table }}`" '{{ index }}'
   loop:
     - mx_messages
     - mx_messages_outgoing
   loop_control:
        loop_var: index
-  when: active.stdout == 1
 
 

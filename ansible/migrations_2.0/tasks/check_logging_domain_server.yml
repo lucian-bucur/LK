@@ -8,3 +8,5 @@
 - name: "Exit if logging_server is not the same as source_server"
   fail: msg="{{ item }} is not on source_server {{ old_server }}, but on {{ logging_server.stdout }}"
   when: logging_server.stdout != old_server
+  tags: [ 'always', 'check_logging' ]
+
