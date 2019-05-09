@@ -5,8 +5,8 @@
   delegate_to: "{{ master.meta[0] }}"
 - debug: var=logging_server.stdout
 
-- name: "Exit if logging_server is not the same as source_server"
-  fail: msg="{{ item }} is not on source_server {{ old_server }}, but on {{ logging_server.stdout }}"
-  when: logging_server.stdout != old_server
-  tags: [ 'always', 'check_logging' ]
+- name: "Logging filter dictionaries"
+  set_fact:
+      logging_filters: "{{ logging_filters | combine({ item: logging_server.stdout }) }}"
+
 

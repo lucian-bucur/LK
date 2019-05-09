@@ -14,17 +14,22 @@
 - set_fact:
     report:
       cluster: "{{ cluster }}"
-      domain_name: "{{ domain_name}}"
+      domain_name: "{{ domain_name }}"
       domain_mask: "{{ domain_mask }}"
 - debug: var=report
 
-- name: Flush MySQL Tables
-  command: mysqladmin flush-tables
+- name: register logging_server
+  set_fact:
+     logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
+- debug: var=logging_server
 
 - name: "Migrate logging domain for /var/lib/mysql/mx_messages"
   shell: "rsync -4 -avzP --progress --exclude='*.BAK' -e 'ssh -o StrictHostKeyChecking=no' \
           {{ old_server }}:/var/lib/mysql/mx_messages/{{ domain_mask }}  /var/lib/mysql/mx_messages/ || echo"
+  when: logging_server == old_server
+
 
 - name: "Migrate logging domain for /var/lib/mysql/mx_messages_outgoing"
   shell: "rsync -4 -avzP --progress --exclude='*.BAK' -e 'ssh -o StrictHostKeyChecking=no' \
           {{ old_server }}:/var/lib/mysql/mx_messages_outgoing/{{ domain_mask }}  /var/lib/mysql/mx_messages_outgoing/ || echo"
+  when: logging_server == old_server

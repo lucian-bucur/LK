@@ -4,6 +4,14 @@
   register: active
 - debug: var=active.stdout
 
+- name:  register domain name
+  set_fact:
+    domain_name: "{{ item }}"
+- name: register logging_server
+  set_fact:
+     logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
+- debug: var=logging_server
+
 - name: "Create remove_index script (purge the old archive index from the logging source_server)"
   template:
     src: templates/remove_index.py.j2
@@ -11,4 +19,4 @@
     mode: "a+x"
 - name: "Purge the old archive index from the logging source_server"
   command: python /tmp/remove_index.py
-  when: active.stdout == 1
+  when: logging_server == old_server and active.stdout == 1

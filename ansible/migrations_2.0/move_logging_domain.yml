@@ -2,6 +2,8 @@
 # 1. determine source_server (where the domain is located)
 - hosts: access.seinternal.com
   gather_facts: no
+  vars:
+    logging_filters: {}
   tasks:
     - name: "Get master server"
       get_servers_with_role:
@@ -14,6 +16,8 @@
       include: tasks/check_logging_domain_server.yml
       register: check_logging_domain_server
       with_lines: cat files/domains.txt
+
+    - debug: var=logging_filters
 
 # 2. ssh authorization (source_server to destination_server)
 - import_playbook: ssh_authorize.yml
@@ -68,19 +72,12 @@
   become: true
   gather_facts: no
   tasks:
-    - name: "Check the server roles"
+    - name: "Migrate logging domains from files/domains.txt"
       include: tasks/migrate_logging_domain.yml
       register: migrate_logging_domain
       with_lines: cat files/domains.txt
 
-# 7. update filter table for target_server
-- hosts: access.seinternal.com
-  gather_facts: no
-  tasks:
-    - name: mysql filter table update on relays
-      command: mysql filter -e "update relays set logging_server='{{ new_server }}' where logging_server='{{ old_server }}'"
-      delegate_to: "{{ master.meta[0] }}"
-
+# 7. repair transferred tables
 - hosts: "{{ new_server }}"
   become: true
   gather_facts: no
@@ -105,17 +102,26 @@
         - logging_scheduled
         - logging_tasks
 
-# 9. remove data from source_server
+# 9. update filter table for target_server
+- hosts: access.seinternal.com
+  gather_facts: no
+  tasks:
+    - name: "Update filter table on relays"
+      include: tasks/update_filter_relays.yml
+      register: update_filter_relays
+      with_lines: cat files/domains.txt
+
+# 10. remove data from source_server
 - hosts: "{{ old_server }}"
   become: true
   gather_facts: no
   tasks:
-    - name: "Check the server roles"
+    - name: "Remove data from source_server"
       include: tasks/remove_data_source.yml
       register: remove_data_source
       with_lines: cat files/domains.txt
 
-# 10. remove zabbix maintenance for source_server & target_server
+# 11. remove zabbix maintenance for source_server & target_server
 - hosts: access.seinternal.com
   gather_facts: no
   tasks:
@@ -131,18 +137,12 @@
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
 
-# 11. rebuild index on new logging server
+# 12. rebuild index on new logging server
 - hosts: "{{ new_server }}"
   gather_facts: no
   tasks:
     - name: "Rebuild archive index from the new logging server"
       shell: mysqlcheck -A --auto-repair --fast
-
-
-
-
-
-
 
 
 
