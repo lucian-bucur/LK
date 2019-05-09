@@ -23,7 +23,7 @@
       change_server_roles:
         old_server: "{{ old_server }}"
         new_server: "{{ new_server }}"
-        role: "quarantine"
+        role: "imap"
       register: output
     - debug: var=output
 
