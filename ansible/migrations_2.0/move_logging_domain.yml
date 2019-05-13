@@ -4,6 +4,7 @@
   gather_facts: no
   vars:
     logging_filters: {}
+    archive_options: {}
   tasks:
     - name: "Get master server"
       get_servers_with_role:
@@ -18,6 +19,7 @@
       with_lines: cat files/domains.txt
 
     - debug: var=logging_filters
+    - debug: var=archive_options
 
 # 2. ssh authorization (source_server to destination_server)
 - import_playbook: ssh_authorize.yml
@@ -143,12 +145,3 @@
   tasks:
     - name: "Rebuild archive index from the new logging server"
       shell: mysqlcheck -A --auto-repair --fast
-
-
-
-
-
-
-
-
-

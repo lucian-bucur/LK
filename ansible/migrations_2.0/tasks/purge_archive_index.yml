@@ -1,16 +1,15 @@
 ---
-- name: "Check if archiving is enabled for the domain = {{ item }}"
-  command: mysql filter -N -e "select active from archive.options where domain='{{ item }}'"
-  register: active
-- debug: var=active.stdout
-
-- name:  register domain name
+- name:  "register domain name"
   set_fact:
     domain_name: "{{ item }}"
-- name: register logging_server
+
+- name: "register logging_server for domain {{ domain_name }}"
   set_fact:
      logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
-- debug: var=logging_server
+
+- name: register archive_options for domain {{ domain_name }}"
+  set_fact:
+     active: "{{ hostvars['access.seinternal.com']['archive_options'][domain_name] }}"
 
 - name: "Create remove_index script (purge the old archive index from the logging source_server)"
   template:
@@ -19,4 +18,4 @@
     mode: "a+x"
 - name: "Purge the old archive index from the logging source_server"
   command: python /tmp/remove_index.py
-  when: logging_server == old_server and active.stdout == 1
+  when: logging_server == old_server and active == 1
