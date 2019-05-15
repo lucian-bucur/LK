@@ -26,4 +26,4 @@ rsync -av -e 'ssh -o StrictHostKeyChecking=no' --progress -i $old_server:/etc/ss
 rsync -av -e 'ssh -o StrictHostKeyChecking=no' --progress -i $old_server:/etc/ssl/private/dovecot.pem /etc/ssl/private/
 rsync -av -e 'ssh -o StrictHostKeyChecking=no' --progress -i $old_server:/etc/ssl/certs/dovecot.pem /etc/ssl/certs/
 rsync -av -e 'ssh -o StrictHostKeyChecking=no' --progress -i --ignore-missing-args $old_server:/etc/ssl/private/nginx-* /etc/ssl/private/
-rsync -av -e 'ssh -o StrictHostKeyChecking=no' --progress -i $old_server:/var/lib/spamexperts/sphinx/ /var/lib/spamexperts/sphinx/
+se-is-master && rsync -av -e 'ssh -o StrictHostKeyChecking=no' --progress -i $old_server:/var/lib/spamexperts/sphinx/ /var/lib/spamexperts/sphinx/

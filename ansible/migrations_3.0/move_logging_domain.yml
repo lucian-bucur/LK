@@ -16,7 +16,8 @@
     - name: "Check the logging domain server"
       include: tasks/check_logging_domain_server.yml
       register: check_logging_domain_server
-      with_lines: cat files/domains.txt
+      with_items:
+        - "{{ domains }}"
 
     - debug: var=logging_filters
     - debug: var=archive_options
@@ -34,7 +35,8 @@
     - name: "Purge archive index from old logging server"
       include: tasks/purge_archive_index.yml
       register: purge_archive_index
-      with_lines: cat files/domains.txt
+      with_items:
+        - "{{ domains }}"
 
 # 4. set source_server & target_server to maintenance
 - hosts: access.seinternal.com
@@ -77,7 +79,8 @@
     - name: "Migrate logging domains from files/domains.txt"
       include: tasks/migrate_logging_domain.yml
       register: migrate_logging_domain
-      with_lines: cat files/domains.txt
+      with_items:
+        - "{{ domains }}"
 
 # 7. repair transferred tables
 - hosts: "{{ new_server }}"
@@ -111,7 +114,8 @@
     - name: "Update filter table on relays"
       include: tasks/update_filter_relays.yml
       register: update_filter_relays
-      with_lines: cat files/domains.txt
+      with_items:
+        - "{{ domains }}"
 
 # 10. remove data from source_server
 - hosts: "{{ old_server }}"
@@ -121,7 +125,8 @@
     - name: "Remove data from source_server"
       include: tasks/remove_data_source.yml
       register: remove_data_source
-      with_lines: cat files/domains.txt
+      with_items:
+        - "{{ domains }}"
 
 # 11. remove zabbix maintenance for source_server & target_server
 - hosts: access.seinternal.com
