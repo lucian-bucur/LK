@@ -54,6 +54,8 @@
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
 
 # 5. stop services on source_server
 - hosts: "{{ old_server }}"
@@ -112,8 +114,8 @@
   gather_facts: no
   tasks:
     - name: "Update filter table on relays"
-      include: tasks/update_filter_relays.yml
-      register: update_filter_relays
+      include: tasks/update_filter_relays_logging_server.yml
+      register: update_filter_relays_logging_server
       with_items:
         - "{{ domains }}"
 
@@ -143,6 +145,8 @@
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
 
 # 12. rebuild index on new logging server
 - hosts: "{{ new_server }}"

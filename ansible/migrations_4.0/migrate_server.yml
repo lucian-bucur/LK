@@ -43,6 +43,8 @@
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
       tags: ['never', 'final_sync' ]
 
 - hosts: "{{ old_server }}"

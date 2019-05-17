@@ -51,6 +51,9 @@
         link_templates: "{{ templates_list.meta }}"
         status: enabled
         state: present
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
+
 
     - name: "Add server to maintenance"
       local_action:
@@ -64,6 +67,8 @@
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
 
     - name: "Get filtering server list"
       get_servers_with_role:
@@ -150,3 +155,5 @@
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"

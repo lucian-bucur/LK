@@ -6,7 +6,7 @@
      logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
 - debug: var=logging_server
 
-- name: mysql filter table update on relays
+- name: mysql filter table update on relays for logging server
   command: mysql filter -e "update relays set logging_server='{{ new_server }}' where logging_server='{{ old_server }}' and domain='{{ item }}'"
   when: logging_server == old_server
   delegate_to: "{{ master.meta[0] }}"

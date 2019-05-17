@@ -30,8 +30,6 @@
        loop_var: index
   register: check
 
-- debug: var=check.results[0]['rc']
-
 - name: "Remove data from the logging source_server"
   command: mysql -e "truncate table {{ table }}" '{{ index }}'
   when: logging_server == old_server and check.results[0]['rc'] == 0

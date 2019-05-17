@@ -55,6 +55,9 @@
         tls_psk: "{{ hostvars[new_server]['psk_key']['stdout'] }}"
         status: enabled
         state: present
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
+
 
     - name: "Add server to maintenance"
       local_action:
@@ -69,7 +72,8 @@
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
-
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
 
 
 - hosts: "{{ old_server }}:{{ new_server }}"
@@ -176,3 +180,5 @@
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
         login_password: "{{ zabbix_password }}"
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
