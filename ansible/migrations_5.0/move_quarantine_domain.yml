@@ -1,0 +1,63 @@
+---
+- import_playbook: ssh_authorize.yml
+  vars:
+    source: "{{ new_server }}"
+    destination: "{{ old_server }}"
+
+
+- hosts: "{{ new_server }}"
+  become: true
+  tasks:
+    - name: "Run initial presync"
+      shell: "rsync -e 'ssh -o StrictHostKeyChecking=no' -4 -av -H \
+      --progress -i {{ old_server }}:/var/mail/{{ item[:1] }}/{{ item[:2] }}/{{ item }}/ \
+      /var/mail/{{ item[:1] }}/{{ item[:2] }}/{{ item }}/ --chown=Debian-exim:Debian-exim"
+      with_items: "{{ domains }}"
+
+- hosts: "access.seinternal.com"
+  tasks:
+    - name: "Get master server"
+      get_servers_with_role:
+        host: "{{ old_server }}"
+        role: master
+      register: master
+    - debug: var=master
+
+    - name: "Filter relays update"
+      command: "mysql filter -e \"update relays set quarantine_server='{{ new_server }}' \
+          where quarantine_server='{{ old_server }}' and domain='{{ item }}'\""
+      with_items:
+        - "{{ domains }}"
+      delegate_to: "{{ master.meta[0] }}"
+
+- hosts: "{{ old_server }}"
+  become: true
+  tasks:
+    - name: "Dump dovecot_expires for domain"
+      shell: "mysqldump -t --skip-opt --insert-ignore --where=\"username like '{{ item }}' \
+              or username='{{ item }}'\" quarantine_local dovecot_expires >/var/tmp/{{ item }}.sql"
+      with_items:
+        - "{{ domains }}"
+
+
+- hosts: "{{ new_server }}"
+  become: true
+  tasks:
+    - name: "Run final sync"
+      shell: "rsync -e 'ssh -o StrictHostKeyChecking=no' -4 -av -H --remove-source-files \
+      --progress -i {{ old_server }}:/var/mail/{{ item[:1] }}/{{ item[:2] }}/{{ item }}/ \
+      /var/mail/{{ item[:1] }}/{{ item[:2] }}/{{ item }}/ --chown=Debian-exim:Debian-exim"
+      with_items: "{{ domains }}"
+
+    - name: "Sync dovecot_expires"
+      shell: "rsync -e 'ssh -o StrictHostKeyChecking=no' -4 -av -H --remove-source-files \
+      {{ old_server }}:/var/tmp/{{ item }}.sql /var/tmp/{{ item }}.sql"
+      with_items: "{{ domains }}"
+
+    - name: "Import dovecot_expires dump"
+      shell: "mysql -B quarantine_local </var/tmp/{{ item }}.sql"
+      with_items: "{{ domains }}"
+
+    - name: "Remove temporary files"
+      shell: "rm /var/tmp/{{ item }}.sql"
+      with_items: "{{ domains }}"

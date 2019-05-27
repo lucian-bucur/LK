@@ -1,4 +1,14 @@
 ---
+- hosts: localhost
+  tasks:
+    - name: Add a host with a non-standard port local to your machines
+      add_host:
+        name: "{{ item }}"
+        groups: "all"
+      with_items:
+        - "{{ source }}"
+        - "{{ destination }}"
+
 - hosts: "{{ source }}"
   become: true
   tasks:
