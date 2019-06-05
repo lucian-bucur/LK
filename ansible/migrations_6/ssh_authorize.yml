@@ -1,7 +1,8 @@
 ---
 - hosts: localhost
+  connection: local
   tasks:
-    - name: Add a host with a non-standard port local to your machines
+    - name: "Add the hosts to the inventory"
       add_host:
         name: "{{ item }}"
         groups: "all"

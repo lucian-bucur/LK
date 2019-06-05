@@ -94,15 +94,11 @@
 - hosts: "{{ new_server }}"
   become: true
   tasks:
-
-    - name: "Rsync Spamexperts application and local quarantine"
-      shell: "{{ item }}"
-      with_items:
-        - "rsync -e 'ssh -o StrictHostKeyChecking=no' -4 -av -H  \
-          --progress -i {{ old_server }}:/home/spamexperts/ /home/spamexperts/"
-        - "rsync -e 'ssh -o StrictHostKeyChecking=no' -4 -av -H  \
-          --progress -i {{ old_server }}:/var/lib/mysql/quarantine_local/ /var/lib/mysql/quarantine_local/"
-      register: result
+    - name: "Run updater to install application"
+      shell: "python /home/spamexperts/update_updater.py; /home/spamexperts/update/update -d \
+      --skip-version-check --skip-apt --skip-restart \
+      --skip-pip --skip-pip-cache --skip-preupdate --skip-postupdate --skip-preupdate-migrations \
+      --skip-postupdate-migrations --skip-salt --skip-wait-turn"
 
     - name: "Restart mysql"
       service:
@@ -110,7 +106,7 @@
         state: started
       when: result is success
 
-- hosts: "{{ old_server }}:{{ new_server }}"
+- hosts: "{{ old_server }}"
   become: true
   tasks:
     - name: "Start services on the old server"
@@ -176,6 +172,9 @@
       local_action:
         module: zabbix_maintenance
         name: "Quarantine migration to {{ new_server }}"
+        host_names:
+          - "{{ old_server }}"
+          - "{{ new_server }}"
         state: absent
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"

@@ -1,7 +1,12 @@
 ---
-# 1. determine source_server (where the domain is located)
+# 1. ssh authorization (source_server to destination_server)
+- import_playbook: ssh_authorize.yml
+  vars:
+    source: "{{ new_server }}"
+    destination: "{{ old_server }}"
+
+# 2. check the logging domain server
 - hosts: access.seinternal.com
-  gather_facts: no
   vars:
     logging_filters: {}
     archive_options: {}
@@ -17,16 +22,10 @@
       include: tasks/check_logging_domain_server.yml
       register: check_logging_domain_server
       with_items:
-        - "{{ domains.split(',') }}"
+        - "{{ domains.split(',') | replace(' ', '') }}"
 
     - debug: var=logging_filters
     - debug: var=archive_options
-
-# 2. ssh authorization (source_server to destination_server)
-- import_playbook: ssh_authorize.yml
-  vars:
-    source: "{{ new_server }}"
-    destination: "{{ old_server }}"
 
 # 3. check if archiving is enabled for the domain and if is the case purge old archive from the old logging server
 - hosts: "{{ old_server }}"
@@ -36,7 +35,7 @@
       include: tasks/purge_archive_index.yml
       register: purge_archive_index
       with_items:
-        - "{{ domains.split(',') }}"
+        - "{{ domains.split(',') | replace(' ', '') }}"
 
 # 4. set source_server & target_server to maintenance
 - hosts: access.seinternal.com
@@ -82,7 +81,7 @@
       include: tasks/migrate_logging_domain.yml
       register: migrate_logging_domain
       with_items:
-        - "{{ domains.split(',') }}"
+        - "{{ domains.split(',') | replace(' ', '') }}"
 
 # 7. repair transferred tables
 - hosts: "{{ new_server }}"
@@ -117,7 +116,7 @@
       include: tasks/update_filter_relays_logging_server.yml
       register: update_filter_relays_logging_server
       with_items:
-        - "{{ domains.split(',') }}"
+        - "{{ domains.split(',') | replace(' ', '') }}"
 
 # 10. remove data from source_server
 - hosts: "{{ old_server }}"
@@ -128,7 +127,7 @@
       include: tasks/remove_data_source.yml
       register: remove_data_source
       with_items:
-        - "{{ domains.split(',') }}"
+        - "{{ domains.split(',') | replace(' ', '') }}"
 
 # 11. remove zabbix maintenance for source_server & target_server
 - hosts: access.seinternal.com

@@ -23,7 +23,7 @@
         host_names:
           - "{{ item }}"
         state: "{{ 'present' if zabbix_action == 'add' else 'absent' if zabbix_action == 'remove'}}"
-        collect_data: False
+        collect_data: True
         minutes: "{{ minutes }}"
         server_url: https://monitor.seinternal.com
         login_user: "{{ zabbix_user }}"
