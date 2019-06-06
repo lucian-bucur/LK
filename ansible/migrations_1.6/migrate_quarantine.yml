@@ -20,7 +20,7 @@
   become: true
   tasks:
     - name: "Change IMAP server"
-      change_server_roles:
+      move_server_role:
         old_server: "{{ old_server }}"
         new_server: "{{ new_server }}"
         role: "imap"
