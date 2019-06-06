@@ -5,6 +5,7 @@
   uri: url='https://localhost:30443/master/outgoing_ipv4_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[0] }}"}],"count":"true"}'
        validate_certs=false
   register: response
+  delegate_to: "{{ cluster_master }}"
 
 - name: export 1
   set_fact:
@@ -22,6 +23,7 @@
   uri: url='https://localhost:30443/master/outgoing_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":"true"}'
        validate_certs=false
   register: response
+  delegate_to: "{{ cluster_master }}"
 
 - name: Gather data on socks only on server found in the domains list for ipv6 and outgoing
   set_fact:
@@ -41,6 +43,7 @@
   uri: url='https://localhost:30443/master/incoming_ipv4_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[0] }}"}],"count":"true"}'
        validate_certs=false
   register: response
+  delegate_to: "{{ cluster_master }}"
 
 - name: export 1
   set_fact:
@@ -58,6 +61,7 @@
   uri: url='https://localhost:30443/master/incoming_ipv6_interfaces/?q={"fields":[{"field":"ip"}],"filters":[{"name":"ip", "op":"==", "val":"{{ item[1] }}"}],"count":"true"}'
        validate_certs=false
   register: response
+  delegate_to: "{{ cluster_master }}"
 
 - name: export 1
   set_fact:

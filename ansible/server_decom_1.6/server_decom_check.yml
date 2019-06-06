@@ -1,5 +1,5 @@
 ---
-- hosts: webservers
+- hosts: decom
   become: True
   vars_files:
        group_vars/vars.yml
@@ -91,6 +91,7 @@
     register: matched_index
 
   - set_fact:
+      cacheable: yes
       report:
         role_check: "{{ report_role }}"
         socks_check:
@@ -99,11 +100,13 @@
             /var/spool/local_scan/: "{{ matched_local_scan.files }}"
             /var/spool/index/: "{{ matched_index.files }}"
           outgoing:
-            ipv4: "{{ socks_out_ipv4 }}"
-            ipv6: "{{ socks_out_ipv6 }}"
+            ipv4: "{{ socks_out_ipv4.value }}"
+            ipv6: "{{ socks_out_ipv6.value }}"
           incomming:
-            ipv4: "{{ socks_inc_ipv4 }}"
-            ipv6: "{{ socks_inc_ipv6 }}"
+            ipv4: "{{ socks_inc_ipv4.value }}"
+            ipv6: "{{ socks_inc_ipv6.value }}"
           domains_listing:
             ipv4: "{{ ipv4_list_domains }}"
             ipv6: "{{ ipv6_list_domains }}"
+
+  - debug: var=report
