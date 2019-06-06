@@ -61,6 +61,12 @@ def configs():
                 "lc_group": "Archive masters",
                 "hc_group": "Archive masters",
                 "list": True
+            },
+            "managed_ips": {
+                "method": "additional names",
+                "section": "exim",
+                "option": "managed_ips",
+                "list": True
             }
 
         }
