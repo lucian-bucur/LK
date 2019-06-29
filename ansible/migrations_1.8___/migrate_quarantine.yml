@@ -1,0 +1,183 @@
+---
+- import_playbook: ssh_authorize.yml
+  vars:
+    source: "{{ new_server }}"
+    destination: "{{ old_server }}"
+
+- hosts: "{{ new_server }}"
+  become: true
+  tasks:
+    - name: "Run initial presync"
+      shell: "rsync -e 'ssh -o StrictHostKeyChecking=no' -4 -av -H --delete \
+      --progress -i {{ old_server }}:/var/mail/ /var/mail/ --chown=Debian-exim:Debian-exim"
+
+    - name: "Get PSK key"
+      shell: "cat /etc/zabbix/zabbix_agentd.psk"
+      register: psk_key
+    - debug: var=psk_key
+
+- hosts: access.seinternal.com
+  become: true
+  tasks:
+    - name: "Change IMAP server"
+      move_server_role:
+        old_server: "{{ old_server }}"
+        new_server: "{{ new_server }}"
+        role: "imap"
+      register: output
+    - debug: var=output
+
+    - name: "Get host groups list"
+      get_host_groups:
+        host: "{{ new_server }}"
+      register: group_list
+    - debug: var=group_list
+
+    - name: "Get host templates list"
+      get_host_templates:
+        host: "{{ new_server }}"
+      register: templates_list
+    - debug: var=templates_list
+
+    - name: "Update Host Group and Templates"
+      local_action:
+        module: zabbix_host
+        server_url: https://monitor.seinternal.com
+        login_user: "{{ zabbix_user }}"
+        login_password: "{{ zabbix_password }}"
+        host_name: "{{ new_server }}"
+        visible_name:  "{{ new_server }}"
+        host_groups: "{{ group_list.meta }}"
+        link_templates: "{{ templates_list.meta }}"
+        tls_psk_identity: "{{ new_server }}_001"
+        tls_connect: 2
+        tls_accept: 2
+        tls_psk: "{{ hostvars[new_server]['psk_key']['stdout'] }}"
+        status: enabled
+        state: present
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
+
+
+    - name: "Add server to maintenance"
+      local_action:
+        module: zabbix_maintenance
+        name: "Quarantine migration to {{ new_server }}"
+        host_names:
+          - "{{ old_server }}"
+          - "{{ new_server }}"
+        state: present
+        collect_data: False
+        minutes: 720
+        server_url: https://monitor.seinternal.com
+        login_user: "{{ zabbix_user }}"
+        login_password: "{{ zabbix_password }}"
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
+
+
+- hosts: "{{ old_server }}:{{ new_server }}"
+  become: True
+  tasks:
+    - name: "Stop services on the servers"
+      service:
+        name: "{{ item }}"
+        state: stopped
+      with_items:
+        - zabbix-agent
+        - mysql
+        - exim4
+        - exim4-outgoing
+        - nginx
+        - cron
+
+- hosts: "{{ new_server }}"
+  become: true
+  tasks:
+    - name: "Run updater to install application"
+      shell: "python /home/spamexperts/update_updater.py; /home/spamexperts/update/update -d \
+      --skip-version-check --skip-apt --skip-restart \
+      --skip-pip --skip-pip-cache --skip-preupdate --skip-postupdate --skip-preupdate-migrations \
+      --skip-postupdate-migrations --skip-salt --skip-wait-turn"
+
+    - name: "Restart mysql"
+      service:
+        name: mysql
+        state: started
+      when: result is success
+
+- hosts: "{{ old_server }}"
+  become: true
+  tasks:
+    - name: "Start services on the old server"
+      service:
+        name: "{{ item }}"
+        state: started
+      with_items:
+        - zabbix-agent
+        - mysql
+        - exim4
+        - exim4-outgoing
+        - nginx
+        - cron
+
+    - name: "License and Configuration Update"
+      shell: "python /home/spamexperts/update_updater.py; /home/spamexperts/update/update -d \
+      --skip-version-check --skip-apt --skip-restart --skip-applications \
+      --skip-pip --skip-pip-cache --skip-preupdate --skip-postupdate --skip-preupdate-migrations \
+      --skip-postupdate-migrations --skip-salt --skip-wait-turn"
+
+- hosts: access.seinternal.com
+  become: true
+  tasks:
+    - name: "Get filtering server list"
+      get_servers_with_role:
+        host: "{{ old_server }}"
+        role: filtering
+      register: servers
+    - debug: var=servers
+
+    - name: "Get master server"
+      get_servers_with_role:
+        host: "{{ old_server }}"
+        role: master
+      register: master
+    - debug: var=master
+
+    - name: "Filter relays update"
+      command: mysql filter -e "update relays set quarantine_server='{{ new_server }}' where quarantine_server='{{ old_server }}'"
+      delegate_to: "{{ master.meta[0] }}"
+
+    - name: "Filter outgoing update"
+      command: mysql filter -e "update outgoing set quarantine_server='{{ new_server }}' where quarantine_server='{{ old_server }}'"
+      delegate_to: "{{ master.meta[0] }}"
+
+    - name: "Copy fix_quarantine_server_in_spool script"
+      template:
+        src: templates/fix_quarantine_server_in_spool.j2
+        dest: /root/fix_quarantine_server_in_spool.py
+        mode: "a+x"
+      delegate_to: "{{ item }}"
+      with_items: "{{ servers.meta }}"
+
+    - name: "Run fix_quarantine_server_in_spool"
+      command: /root/fix_quarantine_server_in_spool.py
+      delegate_to: "{{ item }}"
+      with_items: "{{ servers.meta }}"
+
+- hosts: access.seinternal.com
+  become: True
+  tasks:
+    - name: "Remove zabbix maintenance"
+      local_action:
+        module: zabbix_maintenance
+        name: "Quarantine migration to {{ new_server }}"
+        host_names:
+          - "{{ old_server }}"
+          - "{{ new_server }}"
+        state: absent
+        server_url: https://monitor.seinternal.com
+        login_user: "{{ zabbix_user }}"
+        login_password: "{{ zabbix_password }}"
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"

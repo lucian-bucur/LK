@@ -1,0 +1,38 @@
+---
+- name:  "register domain name"
+  set_fact:
+    domain_name: "{{ item }}"
+- name: "register table name (depends on domain name)"
+  set_fact:
+    table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
+
+- name: register logging_server
+  set_fact:
+     logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
+- debug: var=logging_server
+
+- name: "mysql check table base existence"
+  command: mysql -e "SHOW TABLES LIKE '{{ table }}';" "mx_messages"
+  register: existence_table_base
+
+- name: "mysql check table backup existence"
+  command: mysql -e "SHOW TABLES LIKE 'old_{{ table }}';" "mx_messages"
+  register: existence_table_backup
+
+- name: "mysql lock table {{ table }} for domain {{ domain_name }}"
+  command: mysql -e "LOCK TABLE {{ index }}.{{ table }} READ;"
+  when: logging_server == old_server and existence_table_base.stdout != ''
+  loop:
+    - mx_messages
+    - mx_messages_outgoing
+  loop_control:
+       loop_var: index
+
+- name: "mysql rename table {{ index }}.{{ table }} for domain {{ domain_name }}"
+  command: mysql -e "RENAME TABLE {{ index }}.{{ table }} TO {{ index }}.old_{{ table }};"
+  when: logging_server == old_server and existence_table_base.stdout != '' and existence_table_backup.stdout == ''
+  loop:
+    - mx_messages
+    - mx_messages_outgoing
+  loop_control:
+       loop_var: index

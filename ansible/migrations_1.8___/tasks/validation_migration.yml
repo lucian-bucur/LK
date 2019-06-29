@@ -1,0 +1,31 @@
+---
+- name:  "register domain_name"
+  set_fact:
+    domain_name: "{{ item }}"
+- name: "register table (depends on domain_name)"
+  set_fact:
+    table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
+
+- name: "mysql check count for {{ index }}.{{ table }}"
+  command: mysql -e "select count(*) from {{ index }}.{{ table }}"
+  loop:
+    - mx_messages
+    - mx_messages_outgoing
+  loop_control:
+       loop_var: index
+
+- name: "mysql check count for logging_local.from_domains for domain = {{ domain_name }}"
+  command: mysql -e "select count(*) from logging_local.from_domains where domain='{{ domain_name }}'"
+
+- name: "mysql check count for logging_local.hidden_messages for domain = {{ domain_name }}"
+  command: mysql -e "select count(*) from logging_local.hidden_messages where domain='{{ domain_name }}'"
+  register: logging_local_hidden_messages
+
+- name: "mysql check count for logging_local.secure_email_log for domain = {{ domain_name }}"
+  command: mysql -e "select count(*) from logging_local.secure_email_log where domain='{{ domain_name }}'"
+
+- name: "mysql check count for logging_local.unique_recipients for domain = {{ domain_name }}"
+  command: mysql -e "select count(*) from logging_local.unique_recipients where domain='{{ domain_name }}'"
+
+- name: "mysql check count for logging_local.mailbox_usage for domain = {{ domain_name }}"
+  command: mysql -e "select count(*) from logging_local.mailbox_usage where domain='{{ domain_name }}'"

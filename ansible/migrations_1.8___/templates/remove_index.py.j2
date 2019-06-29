@@ -1,0 +1,12 @@
+import sys
+import time
+
+sys.path.insert(2, "/home/spamexperts/archive_tasks/")
+sys.path.insert(3, "/home/spamexperts/archive_tasks/library.zip")
+from archive.tasks import purge_index
+
+domain_name="{{ item }}"
+start = 0
+end = int(time.time())
+purge_index(domain_name, start, end, 'spamexperts_rt')
+purge_index(domain_name, start, end, 'spamexperts_od')

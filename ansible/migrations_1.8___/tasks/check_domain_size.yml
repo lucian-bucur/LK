@@ -1,0 +1,19 @@
+---
+- name:  "register domain_name"
+  set_fact:
+    domain_name: "{{ item }}"
+- name: "register table name (depends on domain name)"
+  set_fact:
+    table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
+
+- name: "check size for domain name"
+  shell: "ls -lS /var/lib/mysql/mx_messages | grep MYD | grep ' {{ table }}' | awk '{print $5}'"
+  register: size
+
+- name: "register size_stdout for domain = {{ domain_name }}"
+  set_fact:
+    size_stdout: "{{ size.stdout_lines[0] }}"
+
+- name: "register domains_sizes"
+  set_fact:
+      domains_sizes: "{{ domains_sizes | combine({ item: size_stdout }) }}"

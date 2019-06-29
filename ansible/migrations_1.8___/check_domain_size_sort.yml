@@ -1,0 +1,14 @@
+---
+- hosts: "{{ server }}"
+  vars:
+    report: []
+  tasks:
+    - name: "Discover domains on the system"
+      shell: "ls -lS /var/lib/mysql/mx_messages | grep MYD | awk '{print $9}' | sed 's/.MYD//g' | sed 's/_/./g' | sed 's/@002d/-/g'"
+      register: domains
+
+    - name: "Check the size of logging domains"
+      include: tasks/check_domain_size_sort_report.yml
+      with_items: "{{ domains.stdout_lines }}"
+
+    - debug: var=report

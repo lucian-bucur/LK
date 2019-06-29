@@ -1,0 +1,34 @@
+- hosts: access.seinternal.com
+  tasks:
+    - set_fact:
+        minutes: "{{ (hours|int * 60) + (days|int * 1440) + (years|int * 525600) }}"
+
+    - name: 'Check if minutes is greater than 0'
+      fail: msg="Please select maintenance period!"
+      when: minutes == "0"
+
+    - name: "Get filtering server list"
+      get_servers_with_role:
+        host: "{{ server }}"
+        role: filtering
+      register: servers
+      when: whole_cluster == "yes"
+    - debug: var=servers
+
+    - name: "Add server to maintenance"
+      local_action:
+        module: zabbix_maintenance
+        name: "{{ item }}"
+        desc: "Reason: {{ reason }} created by ansible zabbix-maintenance"
+        host_names:
+          - "{{ item }}"
+        state: "{{ 'present' if zabbix_action == 'add' else 'absent' if zabbix_action == 'remove'}}"
+        collect_data: True
+        minutes: "{{ minutes }}"
+        server_url: https://monitor.seinternal.com
+        login_user: "{{ zabbix_user }}"
+        login_password: "{{ zabbix_password }}"
+        http_login_user: "{{ basic_auth_user }}"
+        http_login_password: "{{ basic_auth_password }}"
+      with_items:
+        - "{{ servers.meta | default(server)}}"
