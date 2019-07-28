@@ -1,0 +1,193 @@
+---
+- name:  "register domain name"
+  set_fact:
+    domain_name: "{{ item }}"
+- name: "Register table name (depends on domain name)"
+  set_fact:
+    table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
+
+- name: register logging_server
+  set_fact:
+     logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
+- debug: var=logging_server
+
+# BEFORE MIGRATION: CHECK TABLES EXISTENCE
+# -------------------------------------------------------------------------------------------------------------
+- name: "mysql check table existence on mx_messages"
+  command: mysql -e "SHOW TABLES LIKE 'old_{{ table }}';" "mx_messages"
+  register: existence_old_table_on_mx_messages
+
+- name: "mysql check table existence on mx_messages_outgoing"
+  command: mysql -e "SHOW TABLES LIKE 'old_{{ table }}';" "mx_messages_outgoing"
+  register: existence_old_table_on_mx_messages_outgoing
+
+- name: "mysql check table logging_local.from_domains existence"
+  command: mysql -e "SHOW TABLES LIKE 'from_domains';" "logging_local"
+  register: existence_table_logging_local_from_domains
+
+- name: "mysql check table logging_local.secure_email_log existence"
+  command: mysql -e "SHOW TABLES LIKE 'secure_email_log';" "logging_local"
+  register: existence_table_logging_local_secure_email_log
+
+- name: "mysql check table logging_local.unique_recipients existence"
+  command: mysql -e "SHOW TABLES LIKE 'unique_recipients';" "logging_local"
+  register: existence_table_logging_local_unique_recipients
+
+- name: "mysql check table logging_local.mailbox_usage existence"
+  command: mysql -e "SHOW TABLES LIKE 'mailbox_usage';" "logging_local"
+  register: existence_table_logging_local_mailbox_usage
+
+# BEFORE MIGRATION: VALIDATION
+# -------------------------------------------------------------------------------------------------------------
+- name: "mysql check count(*) for mx_messages.old_{{ table }} for domain {{ domain_name }} before migration"
+  command: mysql -e "select count(*) from mx_messages.old_{{ table }}"
+  register: records_count
+  when: logging_server == old_server and existence_old_table_on_mx_messages.stdout != ''
+
+- name: "register validation count(*) for mx_messages.old_{{ table }} before migration"
+  vars:
+       database_table: "mx_messages.old_{{ table }}"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ''
+
+- name: "mysql check count(*) for mx_messages_outgoing.old_{{ table }} for domain {{ domain_name }} before migration"
+  command: mysql -e "select count(*) from mx_messages_outgoing.old_{{ table }}"
+  register: records_count
+  when: logging_server == old_server and existence_old_table_on_mx_messages_outgoing.stdout != ''
+
+- name: "register validation count(*) for mx_messages_outgoing.old_{{ table }} before migration"
+  vars:
+       database_table: "mx_messages_outgoing.old_{{ table }}"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ''
+
+- name: "mysql check count for logging_local.from_domains for domain {{ domain_name }} before migration"
+  command: mysql -e "select count(*) from logging_local.from_domains where domain='{{ domain_name }}'"
+  register: records_count
+
+- name: "register validation count(*) for logging_local.from_domains before migration"
+  vars:
+       database_table: "logging_local.from_domains"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ''
+
+- name: "mysql check count for logging_local.secure_email_log for domain {{ domain_name }} before migration"
+  command: mysql -e "select count(*) from logging_local.secure_email_log where auth_domain='{{ domain_name }}'"
+  register: records_count
+
+- name: "register validation count(*) for logging_local.secure_email_log before migration"
+  vars:
+       database_table: "logging_local.secure_email_log"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ''
+
+- name: "mysql check count for logging_local.unique_recipients for domain {{ domain_name }} before migration"
+  command: mysql -e "select count(*) from logging_local.unique_recipients where domain='{{ domain_name }}'"
+  register: records_count
+
+- name: "register validation count(*) for logging_local.unique_recipients before migration"
+  vars:
+       database_table: "logging_local.unique_recipients"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ''
+
+- name: "mysql check count for logging_local.mailbox_usage for domain {{ domain_name }} before migration"
+  command: mysql -e "select count(*) from logging_local.mailbox_usage where domain='{{ domain_name }}'"
+  register: records_count
+
+- name: "register validation count(*) for logging_local.mailbox_usage before migration"
+  vars:
+       database_table: "logging_local.mailbox_usage"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ''
+
+# BEFORE MIGRATION: DUMP TABLES
+# -------------------------------------------------------------------------------------------------------------
+- name: "mysql dump table old_{{ table }} for domain {{ domain_name }} for inmess"
+  shell: "mysqldump mx_messages old_{{ table }}  --compact --skip-extended-insert --insert-ignore --complete-insert > /tmp/old_{{ table }}.inmess.sql"
+  when: logging_server == old_server and existence_old_table_on_mx_messages.stdout != ''
+
+- name: "mysql dump table old_{{ table }} for domain {{ domain_name }} for outmess"
+  shell: "mysqldump mx_messages_outgoing old_{{ table }}  --compact --skip-extended-insert --insert-ignore --complete-insert > /tmp/old_{{ table }}.outmess.sql"
+  when: logging_server == old_server and existence_old_table_on_mx_messages_outgoing.stdout != ''
+
+- name: "mysql dump table logging_local.from_domains for domain {{ domain_name }}"
+  shell: "mysqldump logging_local from_domains  --compact --skip-extended-insert --insert-ignore --complete-insert > /tmp/table_logging_local.from_domains.sql"
+  when: logging_server == old_server and existence_table_logging_local_from_domains.stdout != ''
+
+- name: "mysql dump table logging_local.secure_email_log for domain {{ domain_name }}"
+  shell: "mysqldump logging_local secure_email_log  --compact --skip-extended-insert --insert-ignore --complete-insert > /tmp/table_logging_local.secure_email_log.sql"
+  when: logging_server == old_server and existence_table_logging_local_secure_email_log.stdout != ''
+
+- name: "mysql dump table logging_local.unique_recipients for domain {{ domain_name }}"
+  shell: "mysqldump logging_local unique_recipients  --compact --skip-extended-insert --insert-ignore --complete-insert > /tmp/table_logging_local.unique_recipients.sql"
+  when: logging_server == old_server and existence_table_logging_local_unique_recipients.stdout != ''
+
+- name: "mysql dump table logging_local.mailbox_usage for domain {{ domain_name }}"
+  shell: "mysqldump logging_local mailbox_usage  --compact --skip-extended-insert --insert-ignore --complete-insert > /tmp/table_logging_local.mailbox_usage.sql"
+  when: logging_server == old_server and existence_table_logging_local_mailbox_usage.stdout != ''
+
+# BEFORE MIGRATION: CHECK DUMP FILES EXISTENSE
+# -------------------------------------------------------------------------------------------------------------
+- name: "check if inmess dump file for table old_{{ table }} exists"
+  stat:
+    path: "/tmp/old_{{ table }}.inmess.sql"
+  register: backup_table_inmess
+
+- name: "check if outmess dump file for table old_{{ table }} exists"
+  stat:
+    path: "/tmp/old_{{ table }}.outmess.sql"
+  register: backup_table_outmess
+
+- name: "check if table logging_local.from_domains dump file exists"
+  stat:
+    path: "/tmp/table_logging_local.from_domains.sql"
+  register: backup_table_logging_local_from_domains
+
+- name: "check if table logging_local.secure_email_log dump file exists"
+  stat:
+    path: "/tmp/table_logging_local.secure_email_log.sql"
+  register: backup_table_logging_local_secure_email_log
+
+- name: "check if table logging_local.unique_recipients dump file exists"
+  stat:
+    path: "/tmp/table logging_local.unique_recipients.sql"
+  register: backup_table_logging_local_unique_recipients
+
+- name: "check if table logging_local.mailbox_usage dump file exists"
+  stat:
+    path: "/tmp/table_logging_local.mailbox_usage.sql"
+  register: backup_table_logging_local_mailbox_usage
+
+
+# BEFORE MIGRATION: SSH
+# --------------------------------------------------------------------------------------------------
+- name: "scp inmess dump_file_(*.inmess.sql) to the new_server"
+  command: scp -o StrictHostKeyChecking=no "/tmp/old_{{ table }}.inmess.sql" "{{ new_server}}":"/tmp/{{ table }}.inmess.sql"
+  when: logging_server == old_server and backup_table_inmess.stat.exists == true
+
+- name: "scp outmess dump_file_(*.outmess.sql) to the new_server"
+  command: scp -o StrictHostKeyChecking=no "/tmp/old_{{ table }}.outmess.sql" "{{ new_server}}":"/tmp/{{ table }}.outmess.sql"
+  when: logging_server == old_server and backup_table_outmess.stat.exists == true
+
+- name: "scp dump_file_(table_logging_local.from_domains) to the new_server"
+  command: scp -o StrictHostKeyChecking=no "/tmp/table_logging_local.from_domains.sql" "{{ new_server}}":"/tmp/table_logging_local.from_domains.sql"
+  when: logging_server == old_server and backup_table_logging_local_from_domains.stat.exists == true
+
+- name: "scp dump_file_(table_logging_local.secure_email_log) to the new_server"
+  command: scp -o StrictHostKeyChecking=no "/tmp/table_logging_local.secure_email_log.sql" "{{ new_server}}":"/tmp/table_logging_local.secure_email_log.sql"
+  when: logging_server == old_server and backup_table_logging_local_secure_email_log.stat.exists == true
+
+- name: "scp dump_file_(table_logging_local.unique_recipients) to the new_server"
+  command: scp -o StrictHostKeyChecking=no "/tmp/table_logging_local.unique_recipients.sql" "{{ new_server}}":"/tmp/table_logging_local.unique_recipients.sql"
+  when: logging_server == old_server and backup_table_logging_local_unique_recipients.stat.exists == true
+
+- name: "scp dump_file_(table_logging_local.mailbox_usage) to the new_server"
+  command: scp -o StrictHostKeyChecking=no "/tmp/table_logging_local.mailbox_usage.sql" "{{ new_server}}":"/tmp/table_logging_local.mailbox_usage.sql"
+  when: logging_server == old_server and backup_table_logging_local_mailbox_usage.stat.exists == true

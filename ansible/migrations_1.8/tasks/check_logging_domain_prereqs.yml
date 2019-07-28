@@ -18,7 +18,6 @@
 - name: "register domain_condition size to be check in order to move the domain = {{ domain_name }} on the server target"
   set_fact:
       domain_condition: "{{ (domain_size|int) + 10*1024*1024 }}"
-- debug: var=domain_condition
 
 - name: check target root space
   shell: "df -k / | tail -n 1 | awk '{print $4}'"

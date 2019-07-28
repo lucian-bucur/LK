@@ -62,48 +62,33 @@
 - hosts: "{{ old_server }}"
   become: true
   gather_facts: no
+  vars:
+    count_tables: {}
   tasks:
     - name: "Action dump logging domain on the source server for all the domains"
       include: tasks/action_dump_logging_domain.yml
       register: action_dump_logging_domain
       with_items:
         - "{{ domains.split(',') | replace(' ', '') }}"
+    - debug: msg="count tables source ........................................."
+    - debug: var=count_tables
 
 # 8. Import the old data on the new location
 - hosts: "{{ new_server }}"
   become: true
   gather_facts: no
+  vars:
+    count_tables: {}
   tasks:
     - name: "Action import logging domain on the target server for all the domains"
       include: tasks/action_import_logging_domain.yml
       register: action_import_logging_domain
       with_items:
         - "{{ domains.split(',') | replace(' ', '') }}"
+    - debug: msg="count tables target ........................................."
+    - debug: var=count_tables
 
-
-# 9. validation migration on old_server
-- hosts: "{{ old_server }}"
-  become: true
-  gather_facts: no
-  tasks:
-    - name: "Validation migration on source server for all the domains"
-      include: tasks/validation_migration.yml
-      register: source_validation_migration
-      with_items:
-        - "{{ domains.split(',') | replace(' ', '') }}"
-
-# 10. validation migration on old_server
-- hosts: "{{ new_server }}"
-  become: true
-  gather_facts: no
-  tasks:
-    - name: "Validation migration on target server for all the domains"
-      include: tasks/validation_migration.yml
-      register: target_validation_migration
-      with_items:
-        - "{{ domains.split(',') | replace(' ', '') }}"
-
-# 11. update filter table for target_server
+# 9. update filter table for target_server
 - hosts: access.seinternal.com
   gather_facts: no
   tasks:
@@ -113,7 +98,7 @@
       with_items:
         - "{{ domains.split(',') | replace(' ', '') }}"
 
-# 12. Permanently change the table on the old location to read-only, so it cannot receive new data
+# 10. Permanently change the table on the old location to read-only, so it cannot receive new data
 - hosts: "{{ old_server }}"
   tasks:
   - name: "Change table after migration_permission for all the domains"
@@ -121,7 +106,7 @@
     with_items:
       - "{{ domains.split(',') | replace(' ', '') }}"
 
-# 13. check archive options
+# 11. check archive options
 - hosts: access.seinternal.com
   vars:
     archive_options: {}
@@ -133,7 +118,7 @@
 
     - debug: var=archive_options
 
-# 14. check if archiving is enabled for the domain and if is the case purge old archive from the old logging server
+# 12. check if archiving is enabled for the domain and if is the case purge old archive from the old logging server
 - hosts: "{{ old_server }}"
   gather_facts: no
   tasks:

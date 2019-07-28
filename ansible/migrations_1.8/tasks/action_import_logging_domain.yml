@@ -1,0 +1,180 @@
+---
+- name:  "register domain name"
+  set_fact:
+    domain_name: "{{ item }}"
+- name: "register table name (depends on domain name)"
+  set_fact:
+    table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
+
+- name: register logging_server
+  set_fact:
+     logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
+- debug: var=logging_server
+
+- replace: dest="/tmp/{{ table }}.inmess.sql"  regexp="old_{{ table }}" replace="{{ table }}" backup=yes
+- replace: dest="/tmp/{{ table }}.outmess.sql" regexp="old_{{ table }}" replace="{{ table }}" backup=yes
+
+- name: "create database {{ index }} if does not exist"
+  command: mysql -e "CREATE DATABASE IF NOT EXISTS {{ index }}"
+  when: logging_server == old_server
+  loop:
+    - mx_messages
+    - mx_messages_outgoing
+  loop_control:
+       loop_var: index
+
+# BEFORE MIGRATION: CHECK TABLES EXISTENCE
+# -------------------------------------------------------------------------------------------------------------
+- debug: msg="check tables existence .........................................."
+
+- name: "mysql check table {{ table }} existence on mx_messages"
+  command: mysql -e "SHOW TABLES LIKE '{{ table }}';" "mx_messages"
+  register: existence_table_on_mx_messages
+
+- name: "mysql check table {{ table }} existence on mx_messages_outgoing"
+  command: mysql -e "SHOW TABLES LIKE '{{ table }}';" "mx_messages_outgoing"
+  register: existence_table_on_mx_messages_outgoing
+
+- name: "mysql check table logging_local.from_domains existence"
+  command: mysql -e "SHOW TABLES LIKE 'from_domains';" "logging_local"
+  register: existence_table_logging_local_from_domains
+
+- name: "mysql check table logging_local.secure_email_log existence"
+  command: mysql -e "SHOW TABLES LIKE 'secure_email_log';" "logging_local"
+  register: existence_table_logging_local_secure_email_log
+
+- name: "mysql check table logging_local.unique_recipients existence"
+  command: mysql -e "SHOW TABLES LIKE 'unique_recipients';" "logging_local"
+  register: existence_table_logging_local_unique_recipients
+
+- name: "mysql check table logging_local.mailbox_usage existence"
+  command: mysql -e "SHOW TABLES LIKE 'mailbox_usage';" "logging_local"
+  register: existence_table_logging_local_mailbox_usage
+
+# MIGRATION: IMPORT
+# -------------------------------------------------------------------------------------------------------------
+- debug: msg="import records .................................................."
+
+- name: "import table mx_messages.{{ table }} on target server"
+  shell: "mysql mx_messages < /tmp/{{ table }}.inmess.sql"
+  register: import_inmess_content
+  failed_when: import_inmess_content.rc != 0
+  when: logging_server == old_server and existence_table_on_mx_messages.stdout == ''
+
+- name: "import table mx_messages_outgoing.{{ table }} on target server"
+  shell: "mysql mx_messages_outgoing < /tmp/{{ table }}.outmess.sql"
+  register: import_outmess_content
+  failed_when: import_outmess_content.rc != 0
+  when: logging_server == old_server and existence_table_on_mx_messages_outgoing.stdout == ''
+
+- name: "import table logging_local.from_domains on target server"
+  shell: "mysql logging_local < /tmp/table_logging_local.from_domains.sql"
+  register: import_logging_local_from_domains_content
+  failed_when: import_logging_local_from_domains_content.rc != 0
+  when: logging_server == old_server and existence_table_logging_local_from_domains.stdout == ''
+
+- name: "import table logging_local.secure_email_log on target server"
+  shell: "mysql logging_local < /tmp/table_logging_local.secure_email_log.sql"
+  register: import_logging_local_secure_email_content
+  failed_when: import_logging_local_secure_email_content.rc != 0
+  when: logging_server == old_server and existence_table_logging_local_secure_email_log.stdout == ''
+
+- name: "import table logging_local.unique_recipients on target server"
+  shell: "mysql logging_local < /tmp/table_logging_local.unique_recipients.sql"
+  register: import_logging_local_unique_recipients_content
+  failed_when: import_logging_local_unique_recipients_content.rc != 0
+  when: logging_server == old_server and existence_table_logging_local_unique_recipients.stdout == ''
+
+- name: "import table logging_local.mailbox_usage on target server"
+  shell: "mysql logging_local < /tmp/table_logging_local.mailbox_usage.sql"
+  register: import_logging_local_mailbox_usage_content
+  failed_when: import_logging_local_mailbox_usage_content.rc != 0
+  when: logging_server == old_server and existence_table_logging_local_mailbox_usage.stdout == ''
+
+# MIGRATION: VALIDATION
+# -------------------------------------------------------------------------------------------------------------
+- debug: msg="validation after migration ......................................"
+
+- debug: var=existence_table_on_mx_messages
+- debug: var=table
+
+- name: "mysql check count(*) for mx_messages.{{ table }} for domain {{ domain_name }} after migration"
+  command: mysql -e "select count(*) from mx_messages.{{ table }}"
+  register: records_count
+  when: logging_server == old_server and existence_table_on_mx_messages.stdout != ''
+
+- debug: var=records_count
+
+- name: "register validation count(*) for mx_messages.{{ table }} after migration"
+  vars:
+       database_table: "mx_messages.{{ table }}"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ""
+
+- name: "mysql check count(*) for mx_messages_outgoing.{{ table }} for domain {{ domain_name }} after migration"
+  command: mysql -e "select count(*) from mx_messages_outgoing.{{ table }}"
+  register: records_count
+  when: logging_server == old_server and existence_table_on_mx_messages_outgoing.stdout != ''
+
+- debug: var=records_count
+
+- name: "register validation count(*) for mx_messages_outgoing.{{ table }} after migration"
+  vars:
+       database_table: "mx_messages_outgoing.{{ table }}"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ""
+
+- name: "mysql check count for logging_local.from_domains for domain {{ domain_name }} after migration"
+  command: mysql -e "select count(*) from logging_local.from_domains where domain='{{ domain_name }}'"
+  register: records_count
+
+- debug: var=records_count
+
+- name: "register validation count(*) for logging_local.from_domains after migration"
+  vars:
+       database_table: "logging_local.from_domains"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ""
+
+- name: "mysql check count for logging_local.secure_email_log for domain {{ domain_name }} after migration"
+  command: mysql -e "select count(*) from logging_local.secure_email_log where auth_domain='{{ domain_name }}'"
+  register: records_count
+
+- debug: var=records_count
+
+- name: "register validation count(*) for logging_local.secure_email_log after migration"
+  vars:
+       database_table: "logging_local.secure_email_log"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ""
+
+- name: "mysql check count for logging_local.unique_recipients for domain {{ domain_name }} after migration"
+  command: mysql -e "select count(*) from logging_local.unique_recipients where domain='{{ domain_name }}'"
+  register: records_count
+
+- debug: var=records_count
+
+- name: "register validation count(*) for logging_local.unique_recipients after migration"
+  vars:
+       database_table: "logging_local.unique_recipients"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ""
+
+- name: "mysql check count for logging_local.mailbox_usage for domain {{ domain_name }} after migration"
+  command: mysql -e "select count(*) from logging_local.mailbox_usage where domain='{{ domain_name }}'"
+  register: records_count
+
+- debug: var=records_count
+
+- name: "register validation count(*) for logging_local.mailbox_usage after migration"
+  vars:
+       database_table: "logging_local.mailbox_usage"
+  set_fact:
+      count_tables: "{{ count_tables | combine({ database_table : records_count.stdout_lines[1] }) }}"
+  when: records_count.stdout != ""
+# -------------------------------------------------------------------------------------------------------------

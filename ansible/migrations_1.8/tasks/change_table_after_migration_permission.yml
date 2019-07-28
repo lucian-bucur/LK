@@ -1,0 +1,35 @@
+---
+- name:  "register domain name"
+  set_fact:
+    domain_name: "{{ item }}"
+- name: "register table name (depends on domain name)"
+  set_fact:
+    table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
+
+- name: register logging_server
+  set_fact:
+     logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
+- debug: var=logging_server
+
+# VERIFICATION
+# -------------------------------------------------------------------------------------------------------------
+- name: "mysql check table old_{{ table }} existence on mx_messages"
+  command: mysql -e "SHOW TABLES LIKE 'old_{{ table }}';" "mx_messages"
+  register: existence_old_table_on_mx_messages
+
+- name: "mysql check table old_{{ table }} existence on mx_messages_outgoing"
+  command: mysql -e "SHOW TABLES LIKE 'old_{{ table }}';" "mx_messages_outgoing"
+  register: existence_old_table_on_mx_messages_outgoing
+# -------------------------------------------------------------------------------------------------------------
+
+- name: "mysql unlock tables"
+  command: mysql -e "UNLOCK TABLES;"
+  when: logging_server == old_server and existence_old_table_on_mx_messages.stdout != ''
+
+- name: "mysql drop table old_{{ table }} for domain {{ domain_name }} on mx_messages"
+  command: mysql -e "DROP TABLE mx_messages.old_{{ table }};"
+  when: logging_server == old_server and existence_old_table_on_mx_messages.stdout != ''
+
+- name: "mysql drop table old_{{ table }} for domain {{ domain_name }} on mx_messages_outgoing"
+  command: mysql -e "DROP TABLE mx_messages_outgoing.old_{{ table }};"
+  when: logging_server == old_server and existence_old_table_on_mx_messages_outgoing.stdout != ''

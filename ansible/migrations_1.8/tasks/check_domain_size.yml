@@ -10,7 +10,10 @@
   shell: "ls -lS /var/lib/mysql/mx_messages | grep MYD | grep ' {{ table }}' | awk '{print $5}'"
   register: size
 
-- name: "register size_stdout for domain = {{ domain_name }}"
+- fail: msg="domain {{ domain_name }} does not exist on the server; please check the name of the domain!"
+  when: size.stdout == ''
+
+- name: "register size_stdout for domain {{ domain_name }}"
   set_fact:
     size_stdout: "{{ size.stdout_lines[0] }}"
 
