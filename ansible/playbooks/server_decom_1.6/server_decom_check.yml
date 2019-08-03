@@ -1,0 +1,114 @@
+---
+- hosts: decom
+  become: True
+  vars_files:
+       group_vars/vars.yml
+  vars:
+       report_role: {}
+       socks_out_ipv4: {}
+       socks_out_ipv6: {}
+       socks_inc_ipv4: {}
+       socks_inc_ipv6: {}
+       report_role: {}
+       ipv4_list_domains: {}
+       ipv6_list_domains: {}
+  tasks:
+
+  # Checking the server roles
+  - name: "Check the server roles"
+    include: tasks/check_server_role.yml
+    var:
+      report: {}
+    register: server_role_out
+    with_items:
+      - quarantine
+      - logging
+      - archive_master
+
+  # Step 1.b Check for the SOCKS support for this server on ansible_all_ipv4_addresses.
+  - name: "Check socks support on this server"
+    include: tasks/check_socks.yml
+    register: socks_check_output
+    with_nested:
+      - "{{ ansible_all_ipv4_addresses }}"
+      - "{{ ansible_all_ipv6_addresses }}"
+
+  # Check that the ipv4 of the server is not listed in the domains array.
+
+  - name: "Check that server ipv4 address is not listed in the domains array"
+    change_reports:
+       domains: "{{ item }}"
+       interfaces: "{{ ansible_all_ipv4_addresses }}"
+    register: ipv4_list_domains | json_query ( 'ipv4_list_domains[*].value' )
+    with_items:
+      - "{{ domain_servers }}"
+
+  # Check that the ipv6 of the server is not listed in the domains array.
+
+  - name: "Check that server ipv6 address is not listed in the domains array"
+    change_reports:
+       domains: "{{ item }}"
+       interfaces: "{{ ansible_all_ipv6_addresses }}"
+    register: ipv6_list_domains
+    with_items:
+      - "{{ domain_servers }}"
+
+  - name: Moving sql files
+    template:
+        src: "{{ item }}.j2"
+        dest: /root/{{ item }}
+    with_items:
+      - query_inc.sql
+      - query_out.sql
+
+  - name: "Check for incoming exim messages"
+    mysql_db:
+      state: import
+      name: filter_local
+      target: /root/query_inc.sql
+    register: incoming_messages
+
+  - name: "Check for incoming exim messages"
+    mysql_db:
+      state: import
+      name: filter_local
+      target: /root/query_inc.sql
+    register: outgoing_messages
+
+  - name: "Check for /var/spool/archive/"
+    find:
+      paths: "/var/spool/archive/"
+      file_type: file
+    register: matched_archive
+
+  - name: "Check for /var/spool/local_scan/"
+    find:
+      paths: "/var/spool/local_scan/"
+      file_type: file
+    register: matched_local_scan
+
+  - name: "Check for /var/spool/index/"
+    find:
+      paths: "/var/spool/index/"
+      file_type: file
+    register: matched_index
+
+  - set_fact:
+      report:
+        role_check: "{{ report_role }}"
+        socks_check:
+          message_spool:
+            /var/spool/archive11111/: "{{ matched_archive.examined }}"
+            /var/spool/local_scan222/: "{{ matched_local_scan.examined }}"
+            /var/spool/index/: "{{ matched_index.examined }}"
+          outgoing:
+            ipv4: "{{ socks_out_ipv4 }}"
+            ipv6: "{{ socks_out_ipv6 }}"
+          incomming:
+            ipv4: "{{ socks_inc_ipv4 }}"
+            ipv6: "{{ socks_inc_ipv6 }}"
+          domains_listing:
+            ipv4: "{{ ipv4_list_domains }}"
+            ipv6: "{{ ipv6_list_domains }}"
+
+  - debug: var=report
