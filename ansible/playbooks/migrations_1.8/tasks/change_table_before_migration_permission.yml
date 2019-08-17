@@ -28,15 +28,7 @@
 - name: "mysql check old_{{ table }} existence on mx_messages_outgoing"
   command: mysql -e "SHOW TABLES LIKE 'old_{{ table }}';" "mx_messages_outgoing"
   register: existence_old_table_on_mx_messages_outgoing
-# -------------------------------------------------------------------------------------------------------------
-
-# - name: "mysql lock table {{ table }} for domain {{ domain_name }} on mx_messages"
-#   command: mysql -e "LOCK TABLE mx_messages.{{ table }} READ;"
-#   when: logging_server == old_server and existence_table_on_mx_messages.stdout != ''
-#
-# - name: "mysql lock table {{ table }} for domain {{ domain_name }} on mx_messages_outgoing"
-#   command: mysql -e "LOCK TABLE mx_messages.{{ table }} READ;"
-#   when: logging_server == old_server and existence_table_on_mx_messages_outgoing.stdout != ''
+# ------------------------------------------------------------------------------------------------------------
 
 - name: "mysql rename table mx_messages.{{ table }} for domain {{ domain_name }}"
   command: mysql -e "RENAME TABLE  mx_messages.{{ table }} TO  mx_messages.old_{{ table }};"

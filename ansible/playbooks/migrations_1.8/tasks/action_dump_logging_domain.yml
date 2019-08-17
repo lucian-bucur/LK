@@ -112,27 +112,15 @@
     path: "/tmp/mx_messages.old_{{ table }}.inmess.sql"
   register: backup_table_inmess
 
-# - debug: var=backup_table_inmess
-# - debug: var=backup_table_inmess.stat
-# - debug: var=backup_table_inmess.stat.exists
-
 - name: "check if outmess dump file for table old_{{ table }} exists"
   stat:
     path: "/tmp/mx_messages_outgoing.old_{{ table }}.outmess.sql"
   register: backup_table_outmess
 
-# - debug: var=backup_table_outmess
-# - debug: var=backup_table_outmess.stat
-# - debug: var=backup_table_outmess.stat.exists
-
 - name: "check if logging_local.dumps.sql dump file exists"
   stat:
     path: "/tmp/logging_local.dumps.sql"
   register: backup_logging_local_dumps
-
-# - debug: var=backup_logging_local_dumps
-# - debug: var=backup_logging_local_dumps.stat
-# - debug: var=backup_logging_local_dumps.stat.exists
 
 # BEFORE MIGRATION: SSH
 # --------------------------------------------------------------------------------------------------
