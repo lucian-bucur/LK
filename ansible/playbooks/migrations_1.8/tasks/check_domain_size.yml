@@ -6,16 +6,31 @@
   set_fact:
     table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
 
-- name: "check size for domain name"
-  shell: "ls -lS /var/lib/mysql/mx_messages | grep MYD | grep ' {{ table }}' | awk '{print $5}'"
-  register: size
+#########################################################################################################
+# CHECK DOMAIN SIZE
+# -------------------------------------------------------------------------------------------------------
+- name: "check domain size MYD"
+  shell: "ls -lSh /var/lib/mysql/mx_messages | grep MYD | grep ' {{ table }}' | awk '{print $5}'"
+  register: domain_size_MYD
 
 - fail: msg="domain {{ domain_name }} does not exist on the server; please check the name of the domain!"
-  when: size.stdout == ''
+  when: domain_size_MYD.stdout == ''
 
-- name: "register size_stdout for domain {{ domain_name }}"
+- name: "check domain size MYI"
+  shell: "ls -lSh /var/lib/mysql/mx_messages | grep MYI | grep ' {{ table }}' | awk '{print $5}'"
+  register: domain_size_MYI
+
+- name: "register domain size MYD"
   set_fact:
-    size_stdout: "{{ size.stdout_lines[0] }}"
+    size_stdout_MYD: "{{ domain_size_MYD.stdout_lines[0] }}"
+
+- name: "register domain size MYI"
+  set_fact:
+    size_stdout_MYI: "{{ domain_size_MYI.stdout_lines[0] }}"
+
+- name: "register domain size"
+  set_fact:
+    size_stdout: "{{ size_stdout_MYD + size_stdout_MYI }}"
 
 - name: "register domains_sizes"
   set_fact:

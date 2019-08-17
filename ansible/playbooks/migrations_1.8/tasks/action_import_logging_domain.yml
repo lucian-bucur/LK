@@ -11,8 +11,8 @@
      logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
 - debug: var=logging_server
 
-- replace: dest="/tmp/{{ table }}.inmess.sql"  regexp="old_{{ table }}" replace="{{ table }}" backup=yes
-- replace: dest="/tmp/{{ table }}.outmess.sql" regexp="old_{{ table }}" replace="{{ table }}" backup=yes
+- replace: dest="/tmp/mx_messages.{{ table }}.inmess.sql"  regexp="old_{{ table }}" replace="{{ table }}" backup=yes
+- replace: dest="/tmp/mx_messages_outgoing.{{ table }}.outmess.sql" regexp="old_{{ table }}" replace="{{ table }}" backup=yes
 
 - name: "create database {{ index }} if does not exist"
   command: mysql -e "CREATE DATABASE IF NOT EXISTS {{ index }}"
@@ -31,77 +31,49 @@
   command: mysql -e "SHOW TABLES LIKE '{{ table }}';" "mx_messages"
   register: existence_table_on_mx_messages
 
+# - debug: var=existence_table_on_mx_messages
+# - debug: var=existence_table_on_mx_messages.stdout
+
 - name: "mysql check table {{ table }} existence on mx_messages_outgoing"
   command: mysql -e "SHOW TABLES LIKE '{{ table }}';" "mx_messages_outgoing"
   register: existence_table_on_mx_messages_outgoing
 
-- name: "mysql check table logging_local.from_domains existence"
-  command: mysql -e "SHOW TABLES LIKE 'from_domains';" "logging_local"
-  register: existence_table_logging_local_from_domains
-
-- name: "mysql check table logging_local.secure_email_log existence"
-  command: mysql -e "SHOW TABLES LIKE 'secure_email_log';" "logging_local"
-  register: existence_table_logging_local_secure_email_log
-
-- name: "mysql check table logging_local.unique_recipients existence"
-  command: mysql -e "SHOW TABLES LIKE 'unique_recipients';" "logging_local"
-  register: existence_table_logging_local_unique_recipients
-
-- name: "mysql check table logging_local.mailbox_usage existence"
-  command: mysql -e "SHOW TABLES LIKE 'mailbox_usage';" "logging_local"
-  register: existence_table_logging_local_mailbox_usage
+# - debug: var=existence_table_on_mx_messages_outgoing
+# - debug: var=existence_table_on_mx_messages_outgoing.stdout
 
 # MIGRATION: IMPORT
 # -------------------------------------------------------------------------------------------------------------
 - debug: msg="import records .................................................."
 
 - name: "import table mx_messages.{{ table }} on target server"
-  shell: "mysql mx_messages < /tmp/{{ table }}.inmess.sql"
+  shell: "mysql mx_messages < /tmp/mx_messages.{{ table }}.inmess.sql"
   register: import_inmess_content
   failed_when: import_inmess_content.rc != 0
   when: logging_server == old_server and existence_table_on_mx_messages.stdout == ''
 
 - name: "import table mx_messages_outgoing.{{ table }} on target server"
-  shell: "mysql mx_messages_outgoing < /tmp/{{ table }}.outmess.sql"
+  shell: "mysql mx_messages_outgoing < /tmp/mx_messages_outgoing.{{ table }}.outmess.sql"
   register: import_outmess_content
   failed_when: import_outmess_content.rc != 0
   when: logging_server == old_server and existence_table_on_mx_messages_outgoing.stdout == ''
 
-- name: "import table logging_local.from_domains on target server"
-  shell: "mysql logging_local < /tmp/table_logging_local.from_domains.sql"
-  register: import_logging_local_from_domains_content
-  failed_when: import_logging_local_from_domains_content.rc != 0
-  when: logging_server == old_server and existence_table_logging_local_from_domains.stdout == ''
-
-- name: "import table logging_local.secure_email_log on target server"
-  shell: "mysql logging_local < /tmp/table_logging_local.secure_email_log.sql"
-  register: import_logging_local_secure_email_content
-  failed_when: import_logging_local_secure_email_content.rc != 0
-  when: logging_server == old_server and existence_table_logging_local_secure_email_log.stdout == ''
-
-- name: "import table logging_local.unique_recipients on target server"
-  shell: "mysql logging_local < /tmp/table_logging_local.unique_recipients.sql"
-  register: import_logging_local_unique_recipients_content
-  failed_when: import_logging_local_unique_recipients_content.rc != 0
-  when: logging_server == old_server and existence_table_logging_local_unique_recipients.stdout == ''
-
-- name: "import table logging_local.mailbox_usage on target server"
-  shell: "mysql logging_local < /tmp/table_logging_local.mailbox_usage.sql"
-  register: import_logging_local_mailbox_usage_content
-  failed_when: import_logging_local_mailbox_usage_content.rc != 0
-  when: logging_server == old_server and existence_table_logging_local_mailbox_usage.stdout == ''
+- name: "import logging_local.dumps on target server"
+  shell: "mysql logging_local < /tmp/logging_local.dumps.sql"
+  register: import_logging_local_dumps_content
+  failed_when: import_logging_local_dumps_content.rc != 0
+  when: logging_server == old_server
 
 # MIGRATION: VALIDATION
 # -------------------------------------------------------------------------------------------------------------
 - debug: msg="validation after migration ......................................"
 
-- debug: var=existence_table_on_mx_messages
-- debug: var=table
+# - debug: var=existence_table_on_mx_messages
+# - debug: var=table
 
 - name: "mysql check count(*) for mx_messages.{{ table }} for domain {{ domain_name }} after migration"
   command: mysql -e "select count(*) from mx_messages.{{ table }}"
   register: records_count
-  when: logging_server == old_server and existence_table_on_mx_messages.stdout != ''
+  when: logging_server == old_server
 
 - debug: var=records_count
 
@@ -115,7 +87,7 @@
 - name: "mysql check count(*) for mx_messages_outgoing.{{ table }} for domain {{ domain_name }} after migration"
   command: mysql -e "select count(*) from mx_messages_outgoing.{{ table }}"
   register: records_count
-  when: logging_server == old_server and existence_table_on_mx_messages_outgoing.stdout != ''
+  when: logging_server == old_server
 
 - debug: var=records_count
 

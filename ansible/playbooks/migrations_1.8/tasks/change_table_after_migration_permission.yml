@@ -22,9 +22,9 @@
   register: existence_old_table_on_mx_messages_outgoing
 # -------------------------------------------------------------------------------------------------------------
 
-- name: "mysql unlock tables"
-  command: mysql -e "UNLOCK TABLES;"
-  when: logging_server == old_server and existence_old_table_on_mx_messages.stdout != ''
+# - name: "mysql unlock tables"
+#   command: mysql -e "UNLOCK TABLES;"
+#   when: logging_server == old_server and existence_old_table_on_mx_messages.stdout != ''
 
 - name: "mysql drop table old_{{ table }} for domain {{ domain_name }} on mx_messages"
   command: mysql -e "DROP TABLE mx_messages.old_{{ table }};"

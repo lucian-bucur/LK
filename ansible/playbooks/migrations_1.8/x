@@ -1,0 +1,23 @@
+- hosts: server2.dev131.simplyspamfree.com
+  become: true
+  gather_facts: no
+  tasks:
+    - name: "mysql check table example_com_x existence on mx_messages"
+      command: mysql -e "SHOW TABLES LIKE 'example_com_x';" "mx_messages"
+      register: existence_table_on_mx_messages_x
+
+    - debug: var=existence_table_on_mx_messages_x
+    - debug: var=existence_table_on_mx_messages_x.stdout
+
+    - debug: msg='A'
+      when: existence_table_on_mx_messages_x.stdout != ''
+
+    - name: "mysql check table example_com existence on mx_messages"
+      command: mysql -e "SHOW TABLES LIKE 'example_com';" "mx_messages"
+      register: existence_table_on_mx_messages
+
+    - debug: var=existence_table_on_mx_messages
+    - debug: var=existence_table_on_mx_messages.stdout
+
+    - debug: msg='B'
+      when: existence_table_on_mx_messages.stdout != ''

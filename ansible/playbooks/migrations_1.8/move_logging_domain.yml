@@ -127,3 +127,9 @@
       register: purge_archive_index
       with_items:
         - "{{ domains.split(',') | replace(' ', '') }}"
+
+# 13. ssh revoke authorization (source_server to destination_server)
+- import_playbook: ssh_deauthorize.yml
+  vars:
+    source: "{{ new_server }}"
+    destination: "{{ old_server }}"

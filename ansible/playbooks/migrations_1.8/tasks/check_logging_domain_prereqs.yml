@@ -2,7 +2,7 @@
 - name:  "register domain_name"
   set_fact:
     domain_name: "{{ item }}"
-- name: "register logging_server for the domain = {{ domain_name }}"
+- name: "register logging_server for the domain {{ domain_name }}"
   set_fact:
      logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
 - debug: var=logging_server
@@ -10,12 +10,12 @@
   set_fact:
      archive_option: "{{ hostvars['access.seinternal.com']['archive_options'][domain_name] }}"
 - debug: var=archive_option
-- name: "register domain_size for the domain = {{ domain_name }} on the server target"
+- name: "register domain_size for the domain {{ domain_name }} on the server target"
   set_fact:
      domain_size: "{{ hostvars[old_server]['domains_sizes'][domain_name] }}"
 - debug: var=domain_size
 
-- name: "register domain_condition size to be check in order to move the domain = {{ domain_name }} on the server target"
+- name: "register domain_condition size to be check in order to move the domain {{ domain_name }} on the server target"
   set_fact:
       domain_condition: "{{ (domain_size|int) + 10*1024*1024 }}"
 

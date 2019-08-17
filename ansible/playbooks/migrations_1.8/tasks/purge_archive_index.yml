@@ -7,7 +7,7 @@
   set_fact:
      logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
 
-- name: register archive_options for domain {{ domain_name }}"
+- name: "register archive_options for domain {{ domain_name }}"
   set_fact:
      active_options: "{{ hostvars['access.seinternal.com']['archive_options'][domain_name] }}"
 
@@ -17,5 +17,5 @@
     dest: /tmp/remove_index.sh
     mode: "a+x"
 - name: "purge the old archive index from the logging source_server"
-  command: python /tmp/remove_index.py
+  command: "python /tmp/remove_index.py {{ domain_name }}"
   when: logging_server == old_server and active_options == 1
