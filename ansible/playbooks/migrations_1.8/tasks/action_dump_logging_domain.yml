@@ -1,7 +1,4 @@
 ---
-- name:  "register domain name"
-  set_fact:
-    domain_name: "{{ item }}"
 - name: "Register table name (depends on domain name)"
   set_fact:
     table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
@@ -102,7 +99,7 @@
   when: logging_server == old_server and existence_old_table_on_mx_messages_outgoing.stdout != ''
 
 - name: "mysql dump tables from logging_local database for domain {{ domain_name }}"
-  shell: mysql -Ne "use logging_local; show tables" | egrep -v "alembic_version|hidden_messages|secure_email_log" | xargs -I{} sh -c "mysqldump logging_local {} --skip-extended-insert --insert-ignore --complete-insert --where=\"domain='{{domain_name}}'\"" > /tmp/logging_local.dumps.sql
+  shell: mysql -Ne "use logging_local; show tables" | egrep -v "alembic_version|hidden_messages|secure_email_log|master_api_logs" | xargs -I{} sh -c "mysqldump logging_local {} --skip-extended-insert --insert-ignore --complete-insert --where=\"domain='{{domain_name}}'\"" > /tmp/logging_local.dumps.sql
   when: logging_server == old_server
 
 # BEFORE MIGRATION: CHECK DUMP FILES EXISTENSE

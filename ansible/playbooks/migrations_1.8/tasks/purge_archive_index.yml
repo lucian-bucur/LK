@@ -1,8 +1,4 @@
 ---
-- name:  "register domain name"
-  set_fact:
-    domain_name: "{{ item }}"
-
 - name: "register logging_server for domain {{ domain_name }}"
   set_fact:
      logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"

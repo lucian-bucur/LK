@@ -1,7 +1,4 @@
 ---
-- name:  "register domain_name"
-  set_fact:
-    domain_name: "{{ item }}"
 - name: "register table name (depends on domain name)"
   set_fact:
     table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
@@ -34,4 +31,4 @@
 
 - name: "register domains_sizes"
   set_fact:
-      domains_sizes: "{{ domains_sizes | combine({ item: size_stdout }) }}"
+      domains_sizes: "{{ domains_sizes | combine({ domain_name: size_stdout }) }}"

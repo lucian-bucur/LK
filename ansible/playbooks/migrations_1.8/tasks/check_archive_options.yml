@@ -1,6 +1,6 @@
 ---
 - uri:
-    url: "https://{{ master.meta[0] }}:30443/master/archive/options/{{ item }}/active"
+    url: "https://localhost:30443/master/archive/options/{{ domain_name }}/active"
     method: GET
     status_code: [200,404]
     validate_certs: no
@@ -9,10 +9,10 @@
 
 - name: "register archive options dictionaries when status == 200"
   set_fact:
-      archive_options: "{{ archive_options | combine({ item: active_status.json.active }) }}"
+      archive_options: "{{ archive_options | combine({ domain_name: active_status.json.active }) }}"
   when: active_status.status == 200
 
 - name: "register archive options dictionaries when status != 200"
   set_fact:
-      archive_options: "{{ archive_options | combine({ item: 0 }) }}"
+      archive_options: "{{ archive_options | combine({ domain_name: 0 }) }}"
   when: active_status.status != 200

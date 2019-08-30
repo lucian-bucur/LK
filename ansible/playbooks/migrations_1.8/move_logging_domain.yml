@@ -14,8 +14,6 @@
 
     - name: "Check the logging domain server for all the domains"
       include: tasks/check_logging_domain_server.yml
-      with_items:
-        - "{{ domains.split(',') | replace(' ', '') }}"
 
     - debug: var=logging_filters
 
@@ -26,37 +24,24 @@
   tasks:
     - name: "Check the domain sizes for all the domains"
       include: tasks/check_domain_size.yml
-      with_items:
-        - "{{ domains.split(',') | replace(' ', '') }}"
 
 # 3. check the prereqs conditions on the server target before logging domain migration
 - hosts: "{{ new_server }}"
   tasks:
     - name: "Check the prereqs conditions for all the domains"
       include: tasks/check_logging_domain_prereqs.yml
-      with_items:
-        - "{{ domains.split(',') | replace(' ', '') }}"
 
 # 4. ssh authorization (source_server to destination_server)
 - import_playbook: ssh_authorize.yml
   vars:
-    source: "{{ new_server }}"
-    destination: "{{ old_server }}"
+    source: "{{ old_server }}"
+    destination: "{{ new_server }}"
 
 # 5. Permanently change the table on the old location to read-only, so it cannot receive new data
 - hosts: "{{ old_server }}"
   tasks:
   - name: "Change table before migration permission for all the domains"
     include: tasks/change_table_before_migration_permission.yml
-    with_items:
-      - "{{ domains.split(',') | replace(' ', '') }}"
-
-
-# 6. ssh authorization (source_server to destination_server)
-- import_playbook: ssh_authorize.yml
-  vars:
-    source: "{{ old_server }}"
-    destination: "{{ new_server }}"
 
 # 7. Dump the old data (with INSERT IGNORE and without dropping any data that may exist already), and import it on the new location
 - hosts: "{{ old_server }}"
@@ -68,8 +53,6 @@
     - name: "Action dump logging domain on the source server for all the domains"
       include: tasks/action_dump_logging_domain.yml
       register: action_dump_logging_domain
-      with_items:
-        - "{{ domains.split(',') | replace(' ', '') }}"
     - debug: msg="count tables source ........................................."
     - debug: var=count_tables
 
@@ -83,8 +66,6 @@
     - name: "Action import logging domain on the target server for all the domains"
       include: tasks/action_import_logging_domain.yml
       register: action_import_logging_domain
-      with_items:
-        - "{{ domains.split(',') | replace(' ', '') }}"
     - debug: msg="count tables target ........................................."
     - debug: var=count_tables
 
@@ -95,16 +76,12 @@
     - name: "Update filter table on relays for all the domains"
       include: tasks/update_filter_relays_logging_server.yml
       register: update_filter_relays_logging_server
-      with_items:
-        - "{{ domains.split(',') | replace(' ', '') }}"
 
 # 10. Permanently change the table on the old location to read-only, so it cannot receive new data
 - hosts: "{{ old_server }}"
   tasks:
   - name: "Change table after migration_permission for all the domains"
     include: tasks/change_table_after_migration_permission.yml
-    with_items:
-      - "{{ domains.split(',') | replace(' ', '') }}"
 
 # 11. check archive options
 - hosts: access.seinternal.com
@@ -113,8 +90,6 @@
   tasks:
     - name: "Check the archive options for all the domains"
       include: tasks/check_archive_options.yml
-      with_items:
-        - "{{ domains.split(',') | replace(' ', '') }}"
 
     - debug: var=archive_options
 
@@ -125,11 +100,9 @@
     - name: "Purge archive index from old logging server for all the domains"
       include: tasks/purge_archive_index.yml
       register: purge_archive_index
-      with_items:
-        - "{{ domains.split(',') | replace(' ', '') }}"
 
 # 13. ssh revoke authorization (source_server to destination_server)
 - import_playbook: ssh_deauthorize.yml
   vars:
-    source: "{{ new_server }}"
-    destination: "{{ old_server }}"
+    source: "{{ old_server }}"
+    destination: "{{ new_server }}"

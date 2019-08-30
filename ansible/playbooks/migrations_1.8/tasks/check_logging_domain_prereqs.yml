@@ -1,12 +1,9 @@
 ---
-- name:  "register domain_name"
-  set_fact:
-    domain_name: "{{ item }}"
 - name: "register logging_server for the domain {{ domain_name }}"
   set_fact:
      logging_server: "{{ hostvars['access.seinternal.com']['logging_filters'][domain_name] }}"
 - debug: var=logging_server
-- name: "register action_option for the domain = {{ domain_name }} on the server target"
+- name: "register action_option for the domain {{ domain_name }} on the server target"
   set_fact:
      archive_option: "{{ hostvars['access.seinternal.com']['archive_options'][domain_name] }}"
 - debug: var=archive_option
@@ -23,8 +20,18 @@
   shell: "df -k / | tail -n 1 | awk '{print $4}'"
   register: size
 
-- fail: msg="source server is not logging server for the domain = {{ domain_name }}"
+################################################################################
+- name: conversion domain_condition
+  set_fact:
+          domain_condition: "{{ domain_condition | int }}"
+
+- name: conversion size
+  set_fact:
+          size: "{{ size.stdout_lines[0] | int }}"
+################################################################################
+
+- fail: msg="source server is not logging server for the domain {{ domain_name }}"
   when: logging_server != old_server
 
 - fail: msg="target root space does not meet the condition in order to move the domain {{ domain_name }}"
-  when: size.stdout_lines < domain_condition
+  when: size < domain_condition

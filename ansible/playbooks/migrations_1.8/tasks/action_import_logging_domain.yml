@@ -1,7 +1,4 @@
 ---
-- name:  "register domain name"
-  set_fact:
-    domain_name: "{{ item }}"
 - name: "register table name (depends on domain name)"
   set_fact:
     table: "{{ domain_name | replace('.','_') | replace('-','@002d') }}"
@@ -31,15 +28,9 @@
   command: mysql -e "SHOW TABLES LIKE '{{ table }}';" "mx_messages"
   register: existence_table_on_mx_messages
 
-# - debug: var=existence_table_on_mx_messages
-# - debug: var=existence_table_on_mx_messages.stdout
-
 - name: "mysql check table {{ table }} existence on mx_messages_outgoing"
   command: mysql -e "SHOW TABLES LIKE '{{ table }}';" "mx_messages_outgoing"
   register: existence_table_on_mx_messages_outgoing
-
-# - debug: var=existence_table_on_mx_messages_outgoing
-# - debug: var=existence_table_on_mx_messages_outgoing.stdout
 
 # MIGRATION: IMPORT
 # -------------------------------------------------------------------------------------------------------------
@@ -67,15 +58,10 @@
 # -------------------------------------------------------------------------------------------------------------
 - debug: msg="validation after migration ......................................"
 
-# - debug: var=existence_table_on_mx_messages
-# - debug: var=table
-
 - name: "mysql check count(*) for mx_messages.{{ table }} for domain {{ domain_name }} after migration"
   command: mysql -e "select count(*) from mx_messages.{{ table }}"
   register: records_count
   when: logging_server == old_server
-
-- debug: var=records_count
 
 - name: "register validation count(*) for mx_messages.{{ table }} after migration"
   vars:
@@ -89,8 +75,6 @@
   register: records_count
   when: logging_server == old_server
 
-- debug: var=records_count
-
 - name: "register validation count(*) for mx_messages_outgoing.{{ table }} after migration"
   vars:
        database_table: "mx_messages_outgoing.{{ table }}"
@@ -101,8 +85,6 @@
 - name: "mysql check count for logging_local.from_domains for domain {{ domain_name }} after migration"
   command: mysql -e "select count(*) from logging_local.from_domains where domain='{{ domain_name }}'"
   register: records_count
-
-- debug: var=records_count
 
 - name: "register validation count(*) for logging_local.from_domains after migration"
   vars:
@@ -115,8 +97,6 @@
   command: mysql -e "select count(*) from logging_local.secure_email_log where auth_domain='{{ domain_name }}'"
   register: records_count
 
-- debug: var=records_count
-
 - name: "register validation count(*) for logging_local.secure_email_log after migration"
   vars:
        database_table: "logging_local.secure_email_log"
@@ -128,8 +108,6 @@
   command: mysql -e "select count(*) from logging_local.unique_recipients where domain='{{ domain_name }}'"
   register: records_count
 
-- debug: var=records_count
-
 - name: "register validation count(*) for logging_local.unique_recipients after migration"
   vars:
        database_table: "logging_local.unique_recipients"
@@ -140,8 +118,6 @@
 - name: "mysql check count for logging_local.mailbox_usage for domain {{ domain_name }} after migration"
   command: mysql -e "select count(*) from logging_local.mailbox_usage where domain='{{ domain_name }}'"
   register: records_count
-
-- debug: var=records_count
 
 - name: "register validation count(*) for logging_local.mailbox_usage after migration"
   vars:

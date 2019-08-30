@@ -10,6 +10,11 @@
         - "{{ source }}"
         - "{{ destination }}"
 
+    - name: "Register Public Ip address of the source server"
+      shell: "dig +short a {{ source }}"
+      register: source_ip
+    - debug: var=source_ip.stdout
+
 - hosts: "{{ source }}"
   become: true
   tasks:
@@ -17,11 +22,13 @@
       fetch:
         src: /root/.ssh/id_rsa.pub
         dest: /tmp/ansible/
-    - debug: var="hostvars['{{ source }}']['ansible_default_ipv4']['address']"
+
+    - name: "Add destination to known hosts"
+      shell: "ssh-keyscan -H {{ destination }} >> /root/.ssh/known_hosts"
 
 - hosts: "{{ destination }}"
   vars:
-    source_ip: "{{ hostvars[source]['ansible_default_ipv4']['address'] }}"
+    source_ip: "{{ hostvars['127.0.0.1']['source_ip']['stdout'] }}"
   become: true
   tasks:
     - name: "Ensure destination directory exists"
@@ -52,7 +59,7 @@
         chain: INPUT
         source: "{{ source_ip }}"
         protocol: tcp
-        destination_port: 22
+        destination_port: "22"
         jump: ACCEPT
-        rule_num: 1
+        rule_num: "1"
         action: insert

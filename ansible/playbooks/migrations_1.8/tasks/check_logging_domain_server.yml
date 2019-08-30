@@ -1,8 +1,9 @@
 ---
 - debug: var=master.meta[0]
 - uri:
-    url: "https://{{ master.meta[0] }}:30443/master/relays/{{ item }}/logging_server"
+    url: "https://localhost:30443/master/relays/{{ domain_name }}/logging_server"
     method: GET
+    status_code: [200,404]
     validate_certs: no
   register: logging_server
   delegate_to: "{{ master.meta[0] }}"
@@ -10,10 +11,10 @@
 
 - name: "register logging filter dictionaries"
   set_fact:
-      logging_filters: "{{ logging_filters | combine({ item: logging_server.json['logging_server'] }) }}"
+      logging_filters: "{{ logging_filters | combine({ domain_name: logging_server.json['logging_server'] }) }}"
 
 - uri:
-    url: "https://{{ master.meta[0] }}:30443/master/archive/options/{{ item }}/active"
+    url: "https://localhost:30443/master/archive/options/{{ domain_name }}/active"
     method: GET
     status_code: [200,404]
     validate_certs: no
@@ -22,10 +23,10 @@
 
 - name: "register archive options dictionaries when status == 200"
   set_fact:
-      archive_options: "{{ archive_options | combine({ item: active_status.json.active }) }}"
+      archive_options: "{{ archive_options | combine({ domain_name: active_status.json.active }) }}"
   when: active_status.status == 200
 
 - name: "register archive options dictionaries when status != 200"
   set_fact:
-      archive_options: "{{ archive_options | combine({ item: 0 }) }}"
+      archive_options: "{{ archive_options | combine({ domain_name: 0 }) }}"
   when: active_status.status != 200
